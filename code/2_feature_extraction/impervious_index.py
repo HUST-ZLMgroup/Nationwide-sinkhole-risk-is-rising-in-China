@@ -1,0 +1,232 @@
+# impervious_index.py
+import os
+import numpy as np
+from rasterio_compat import rasterio
+from tqdm import tqdm
+
+
+def _extract_isa_values_for_year(tif_path, sinkhole_position, year_label=None):
+    """
+    从给定的 GeoTIFF 中按点提取不透水指数像元值，返回一个长度与 sinkhole_position 相同的 numpy 数组。
+    """
+    if not os.path.exists(tif_path):
+        raise FileNotFoundError(f"[ImperviousIndex] 未找到栅格文件: {tif_path}")
+
+    desc = f"提取 {year_label}" if year_label is not None else f"提取 {os.path.basename(tif_path)}"
+    values = []
+
+    with rasterio.open(tif_path) as src:
+        nodata = src.nodata
+
+        for _, row in tqdm(
+            sinkhole_position.iterrows(),
+            total=len(sinkhole_position),
+            desc=desc,
+        ):
+            lon = row["Longitude"]
+            lat = row["Latitude"]
+
+            try:
+                # 对于 EPSG:4326，index(lon, lat)
+                row_idx, col_idx = src.index(lon, lat)
+            except Exception:
+                values.append(np.nan)
+                continue
+
+            # 判断是否在栅格范围内
+            if 0 <= row_idx < src.height and 0 <= col_idx < src.width:
+                window = rasterio.windows.Window(col_idx, row_idx, 1, 1)
+                data = src.read(1, window=window)
+                v = float(data[0][0])
+
+                # 处理 NoData
+                if nodata is not None and (v == nodata or np.isclose(v, nodata)):
+                    v = np.nan
+
+                values.append(v)
+            else:
+                values.append(np.nan)
+
+    return np.array(values, dtype="float64")
+
+
+def impervious_index(
+    sinkhole_position,
+    database_folder_path,
+    historical_folder_path,
+    future_ssp_folder_path,
+    ssp,
+):
+    """
+    提取不透水指数（0-100，0 为透水，100 为不透水），并计算历史/未来时间段平均值。
+
+    数据路径
+    --------
+    - 2015 年及以前（历史）：
+      Z:\\jing\\Large_scale\\future_dataset\\8_impervious_surface_area_1985_2100_1km\\historical\\gUrban_ISA_1km_2xxx.tif
+
+    - 2020-2100 年（SSP 投影）：
+      Z:\\jing\\Large_scale\\future_dataset\\8_impervious_surface_area_1985_2100_1km\\SSPx\\SSPx_gISA_2xxx_1km.tif
+      其中 SSPx 为大写的 SSP 名（SSP1/SSP2/...），2xxx 为年份（2020-2100，5 年间隔）
+
+    计算需求
+    --------
+    - 历史：使用 2000, 2010, 2020 三年的平均值
+      （注意：2000、2010 来自 historical，2020 来自 SSP 路径）
+    - 未来：以 20 年为时间段，使用 10 年间隔数据的平均值：
+        * 2020-2040：使用 2020, 2030, 2040
+        * 2040-2060：使用 2040, 2050, 2060
+        * 2060-2080：使用 2060, 2070, 2080
+        * 2080-2100：使用 2080, 2090, 2100
+
+    参数
+    ----
+    sinkhole_position : pandas.DataFrame
+        至少包含列 'No', 'Longitude', 'Latitude'
+    database_folder_path : str
+        数据库根目录，例如 Z:\\jing\\Large_scale\\future_dataset
+    historical_folder_path : str
+        历史数据输出目录（.../historical）
+    future_ssp_folder_path : str
+        未来数据输出目录（.../future/sspX）
+    ssp : str
+        SSP 情景字符串，例如 'ssp1', 'ssp2', 'ssp3', 'ssp4', 'ssp5'
+
+    返回
+    ----
+    pandas.DataFrame
+        在原 DataFrame 基础上新增以下列：
+        - ImperviousIndex_hist_2000_2010_2020
+        - ImperviousIndex_2020_2040
+        - ImperviousIndex_2040_2060
+        - ImperviousIndex_2060_2080
+        - ImperviousIndex_2080_2100
+    """
+
+    print("\n[ImperviousIndex] 开始计算不透水指数 ...")
+
+    # ---------------- 1. 检查输入列 ----------------
+    required_cols = ["No", "Longitude", "Latitude"]
+    for col in required_cols:
+        if col not in sinkhole_position.columns:
+            raise ValueError(
+                f"[ImperviousIndex] 输入的 sinkhole_position 缺少必要列: '{col}'"
+            )
+
+    # ---------------- 2. 构造数据路径根目录 ----------------
+    isa_root = os.path.join(
+        database_folder_path,
+        "8_impervious_surface_area_1985_2100_1km",
+    )
+
+    # 历史路径：.../historical/gUrban_ISA_1km_2xxx.tif
+    hist_dir = os.path.join(isa_root, "historical")
+
+    # SSP 路径：.../SSPx/SSPx_gISA_2xxx_1km.tif
+    ssp_folder_name = ssp.upper()  # 'ssp3' -> 'SSP3'
+    ssp_dir = os.path.join(isa_root, ssp_folder_name)
+
+    print(f"[ImperviousIndex] 历史数据目录: {hist_dir}")
+    print(f"[ImperviousIndex] SSP 投影数据目录: {ssp_dir}")
+    print(f"[ImperviousIndex] 当前 SSP 情景: {ssp}")
+
+    # ---------------- 3. 确定需要的年份 ----------------
+    # 历史：2000, 2010, 2020
+    hist_years = [2000, 2010, 2020]
+
+    # 未来时间窗：2020-2040；2040-2060；2060-2080；2080-2100
+    future_windows = {
+        "ImperviousIndex_2020_2040": [2020, 2030, 2040],
+        "ImperviousIndex_2040_2060": [2040, 2050, 2060],
+        "ImperviousIndex_2060_2080": [2060, 2070, 2080],
+        "ImperviousIndex_2080_2100": [2080, 2090, 2100],
+    }
+
+    all_future_years = sorted({y for years in future_windows.values() for y in years})
+    years_needed = sorted(set(hist_years + all_future_years))
+
+    # ---------------- 4. 为每个年份拼接正确的路径并提取数值 ----------------
+    year_values = {}
+
+    for year in years_needed:
+        if year <= 2015:
+            # 历史路径
+            tif_name = f"gUrban_ISA_1km_{year}.tif"
+            tif_path = os.path.join(hist_dir, tif_name)
+        else:
+            # SSP 路径（2020-2100，以 5 年为增量，但我们只用 10 年间隔的年份）
+            # 文件名格式：SSPx_gISA_2xxx_1km.tif，例如：SSP3_gISA_2020_1km.tif
+            tif_name = f"{ssp_folder_name}_gISA_{year}_1km.tif"
+            tif_path = os.path.join(ssp_dir, tif_name)
+
+        print(f"[ImperviousIndex] 年份 {year} 使用的栅格: {tif_path}")
+        year_values[year] = _extract_isa_values_for_year(
+            tif_path, sinkhole_position, year_label=str(year)
+        )
+
+    # ---------------- 5. 历史：2000, 2010, 2020 平均 ----------------
+    print("[ImperviousIndex] 计算历史平均（2000, 2010, 2020）...")
+    hist_stack = np.vstack([year_values[y] for y in hist_years])
+    hist_mean = np.nanmean(hist_stack, axis=0)
+    hist_col = "ImperviousIndex_hist_2000_2010_2020"
+    sinkhole_position[hist_col] = hist_mean
+
+    # ---------------- 6. 未来四个时间段内的平均 ----------------
+    for col_name, years in future_windows.items():
+        print(f"[ImperviousIndex] 计算未来时间段 {col_name} 对应年份 {years} 的平均...")
+        stack = np.vstack([year_values[y] for y in years])
+        mean_vals = np.nanmean(stack, axis=0)
+        sinkhole_position[col_name] = mean_vals
+
+    # ---------------- 7. 保存历史与未来结果 ----------------
+    # 历史结果：ID + 坐标 + 历史平均
+    hist_out_cols = ["No", "Longitude", "Latitude", hist_col]
+    hist_out_cols = [c for c in hist_out_cols if c in sinkhole_position.columns]
+    hist_df = sinkhole_position[hist_out_cols].copy()
+
+    os.makedirs(historical_folder_path, exist_ok=True)
+    hist_output_path = os.path.join(
+        historical_folder_path, "ImperviousIndex_historical_2000_2010_2020.csv"
+    )
+    hist_df.to_csv(hist_output_path, index=False, encoding="utf-8-sig")
+
+    # 未来结果：ID + 坐标 + 四个时间段平均
+    future_out_cols = ["No", "Longitude", "Latitude"] + list(future_windows.keys())
+    future_out_cols = [c for c in future_out_cols if c in sinkhole_position.columns]
+    future_df = sinkhole_position[future_out_cols].copy()
+
+    os.makedirs(future_ssp_folder_path, exist_ok=True)
+    future_output_path = os.path.join(
+        future_ssp_folder_path, f"ImperviousIndex_future_{ssp}.csv"
+    )
+    future_df.to_csv(future_output_path, index=False, encoding="utf-8-sig")
+
+    # ---------------- 8. 打印统计信息 ----------------
+    print("\n[ImperviousIndex] 历史数据统计（2000, 2010, 2020 平均）:")
+    if not hist_df[hist_col].isna().all():
+        print(f"  点数: {len(hist_df)}")
+        print(f"  最小值: {hist_df[hist_col].min():.2f}")
+        print(f"  最大值: {hist_df[hist_col].max():.2f}")
+        print(f"  平均值: {hist_df[hist_col].mean():.2f}")
+
+    print("\n[ImperviousIndex] 未来各时间段统计（按 SSP 情景）:")
+    for col_name in future_windows.keys():
+        col_series = future_df[col_name]
+        if col_series.isna().all():
+            continue
+        print(f"  {col_name}:")
+        print(f"    点数: {len(col_series)}")
+        print(f"    最小值: {col_series.min():.2f}")
+        print(f"    最大值: {col_series.max():.2f}")
+        print(f"    平均值: {col_series.mean():.2f}")
+
+    print("\n[ImperviousIndex] 历史结果已保存至:")
+    print("  ", hist_output_path)
+    print("[ImperviousIndex] 未来结果已保存至:")
+    print("  ", future_output_path)
+    print("\n[ImperviousIndex] 结果预览（历史部分）:")
+    print(hist_df.head())
+    print("\n[ImperviousIndex] 结果预览（未来部分）:")
+    print(future_df.head())
+
+    return sinkhole_position

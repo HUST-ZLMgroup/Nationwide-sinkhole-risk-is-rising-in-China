@@ -1,0 +1,14 @@
+This package is retained only as a legacy / supplementary branch.
+
+Current project decision:
+- The main attribution baseline is LiNGAM, not RF + LiNGAM.
+- This package is not part of the mainline attribution method anymore.
+
+Important:
+- The numerical results and figures are unchanged from the previous corrected v2 package.
+- The underlying modelling code remains the RF + TreeSHAP implementation from that package.
+- A true methodological replacement would require rewriting the model block to GWR / GWLR
+  (for a binary Disaster target, GWLR is the more precise term) and using a compatible
+  interpretation framework rather than simply renaming files.
+
+Use this package only if you explicitly need the old RF/TreeSHAP branch for comparison or archive.

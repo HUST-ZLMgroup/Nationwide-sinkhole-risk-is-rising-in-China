@@ -1,0 +1,51 @@
+# Local environments
+.venv/
+venv/
+env/
+.idea/
+.vscode/
+
+# Python and Jupyter caches
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# System files
+.DS_Store
+._*
+
+# Data and generated outputs
+data/
+outputs/
+output/
+batch_outputs/
+_batch_logs/
+_cache/
+
+# Large/generated scientific artifacts
+*.pkl
+*.pickle
+*.joblib
+*.npy
+*.npz
+*.h5
+*.hdf5
+*.tif
+*.tiff
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.pdf
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.gpkg
+*.zip
+*.rar
+*.7z
+
+# Logs
+*.log
