@@ -49,3 +49,8 @@ _cache/
 
 # Logs
 *.log
+
+# Public source-data package for the manuscript
+!Source_Data.zip
+!source_data/
+!source_data/**

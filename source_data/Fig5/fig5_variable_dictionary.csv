@@ -1,0 +1,14 @@
+﻿node,node_full_name,source_column,example_current_column,example_future_pattern,group_lv1,group_lv2,is_target,is_static,is_dynamic,plot_order,node_order,color_hex
+DK,Distance to karst,Distance_to_karst,Distance_to_karst,Distance_to_karst,Hydrogeology,Static geology,False,True,False,1,1,#7E8FA3
+DB,Depth to bedrock,Depth_to_Bedrock,Depth_to_Bedrock,Depth_to_Bedrock,Hydrogeology,Static geology,False,True,False,2,2,#7E8FA3
+DF,Distance to fault,Distance_to_Fault_m,Distance_to_Fault_m,Distance_to_Fault_m,Hydrogeology,Static geology,False,True,False,3,3,#7E8FA3
+HDS,HDS,HDS,HDS_hist_2000_2010_2020,HDS_{t_minus_20}_{t},Hydrogeology,Static geology,False,False,True,4,4,#7E8FA3
+PR,Precipitation,Precip,Precip_hist_2000_2010_2020,Precip_{t_minus_20}_{t},Climate,Climate forcing,False,False,True,5,5,#9AAF9A
+TAS,Air temperature,Tas,Tas_hist_2000_2010_2020,Tas_{t_minus_20}_{t},Climate,Climate forcing,False,False,True,6,6,#9AAF9A
+HUSS,Specific humidity,Huss,Huss_hist_2000_2010_2020,Huss_{t_minus_20}_{t},Climate,Climate forcing,False,False,True,7,7,#9AAF9A
+PT,Population total,PopTotal,PopTotal_hist_2000_2010_2020,PopTotal_{t_minus_20}_{t},Anthropogenic,Human pressure,False,False,True,8,8,#C69074
+UF,Urban fraction,UrbanFrac,UrbanFrac_hist_2000_2010_2020,UrbanFrac_{t_minus_20}_{t},Anthropogenic,Human pressure,False,False,True,9,9,#C69074
+IP,Impervious index,ImperviousIndex,ImperviousIndex_hist_2000_2010_2020,ImperviousIndex_{t_minus_20}_{t},Anthropogenic,Human pressure,False,False,True,10,10,#C69074
+LAI,Leaf area index,LAI,LAI_hist_2000_2010_2020,LAI_{t_minus_20}_{t},Anthropogenic,Environmental mediator,False,False,True,11,11,#C69074
+WTD,Water table depth,WTD,WTD_hist_2000_2010_2020,WTD_{t_minus_20}_{t},Anthropogenic,Environmental mediator,False,False,True,12,12,#C69074
+RISK,Predicted sinkhole probability,risk_probability,risk_probability,risk_probability,Target,Target,True,False,False,13,13,#8D6E63

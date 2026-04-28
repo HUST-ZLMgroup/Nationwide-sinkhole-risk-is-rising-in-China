@@ -1,0 +1,11 @@
+{
+  "cv_n_splits": 5,
+  "cv_n_repeats": 10,
+  "n_runs": 50,
+  "seed_base": 2026,
+  "n_boot": 1000,
+  "boot_stratified": true,
+  "research_bw_each_run": false,
+  "bw_fixed": 293.0,
+  "debug_tag": "debug1"
+}

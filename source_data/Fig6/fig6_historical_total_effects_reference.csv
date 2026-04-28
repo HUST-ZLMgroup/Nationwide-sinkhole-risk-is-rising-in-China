@@ -1,0 +1,13 @@
+﻿node,node_full_name,group_lv1,group_lv2,total_effect,total_effect_abs,effect_sign,rank_abs,selected_topk
+HUSS,Specific humidity,Climate,Climate forcing,-0.39267159404506685,0.39267159404506685,negative,1,True
+TAS,Air temperature,Climate,Climate forcing,0.2918316233019989,0.2918316233019989,positive,2,True
+HDS,HDS,Hydrogeology,Static geology,-0.2892322204747303,0.2892322204747303,negative,3,True
+DK,Distance to karst,Hydrogeology,Static geology,-0.2774788827882801,0.2774788827882801,negative,4,True
+PR,Precipitation,Climate,Climate forcing,0.27043141529056225,0.27043141529056225,positive,5,True
+PT,Population total,Anthropogenic,Human pressure,0.16664135241501513,0.16664135241501513,positive,6,True
+DB,Depth to bedrock,Hydrogeology,Static geology,-0.14989126744357895,0.14989126744357895,negative,7,False
+LAI,Leaf area index,Anthropogenic,Environmental mediator,-0.12721446777860504,0.12721446777860504,negative,8,False
+UF,Urban fraction,Anthropogenic,Human pressure,0.08988897126564308,0.08988897126564308,positive,9,False
+WTD,Water table depth,Anthropogenic,Environmental mediator,-0.0573506043231396,0.0573506043231396,negative,10,False
+IP,Impervious index,Anthropogenic,Human pressure,0.03525916782398987,0.03525916782398987,positive,11,False
+DF,Distance to fault,Hydrogeology,Static geology,0.012841327490164142,0.012841327490164142,positive,12,False

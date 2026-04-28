@@ -1,8 +1,8 @@
 # Nationwide sinkhole risk in China
 
-This repository contains the analysis code used for the nationwide sinkhole susceptibility, attribution, climate-change impact and intervention-optimization workflow.
+This repository contains the analysis code and figure source data used for the nationwide sinkhole susceptibility, attribution, climate-change impact and intervention-optimization workflow.
 
-The repository is a code-only release. Large geospatial inputs, intermediate model artifacts and generated outputs are not included because they exceed normal GitHub size limits and may have separate data-source licenses.
+The repository includes the processed source-data package underlying the main-text figures. Large third-party raw geospatial inputs, intermediate model artifacts and full generated outputs are not included because they exceed normal GitHub size limits or may have separate data-source licenses.
 
 ## Repository layout
 
@@ -14,6 +14,8 @@ The repository is a code-only release. Large geospatial inputs, intermediate mod
 - `code/5_1_climate_change/`: counterfactual climate-impact calculations and plotting.
 - `code/6_NSGA_II_optimization/`: cell-level NSGA-II intervention optimization and strategy figures.
 - `code/mgtwr/`: local GWR/MGTWR helper implementation and robust-sigmoid utilities.
+- `source_data/`: processed source data supporting main-text Figs. 1-8.
+- `Source_Data.zip`: compressed copy of `source_data/`.
 
 ## Expected data layout
 
@@ -25,6 +27,12 @@ outputs/
 ```
 
 Most notebooks were originally run in an internal project workspace. Absolute local paths have been replaced with generic placeholders such as `/path/to/sinkhole-risk-china`. Update those placeholders, or set up the same `data/` and `outputs/` structure before rerunning the notebooks.
+
+## Source data
+
+The `source_data/` folder is organized by figure. CSV/JSON files provide numerical source data for charts, validation diagnostics, attribution summaries, climate-counterfactual summaries and optimization results. GeoTIFF and shapefile components provide processed spatial layers for map-based panels. The manifest `source_data/SOURCE_DATA_MANIFEST.csv` records file sizes and SHA-256 checksums.
+
+Raw third-party predictor datasets are not redistributed here. They should be obtained from the original data providers cited in the manuscript.
 
 ## Python environment
 
@@ -50,6 +58,6 @@ Some point-generation notebooks use `arcpy`, which requires an ArcGIS Pro Python
 
 ## Notes
 
-- Notebook outputs were stripped for a clean code release.
-- Large generated artifacts are intentionally ignored by `.gitignore`.
+- Notebook outputs were stripped for a clean release.
+- Large generated artifacts outside `source_data/` are intentionally ignored by `.gitignore`.
 - No software license has been selected yet; add one before making this repository public if reuse terms need to be explicit.

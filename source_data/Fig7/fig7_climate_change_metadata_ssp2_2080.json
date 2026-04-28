@@ -1,0 +1,103 @@
+{
+  "base_path": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC",
+  "resolution": "10km",
+  "path_name": "Points_China_all_10km",
+  "ssp": "ssp2",
+  "ssp_time": "2080",
+  "future_window": "2060_2080",
+  "output_dir": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC/output_v2/Points_China_all_10km/ssp2/2080/climate_change",
+  "groups": {
+    "anthropogenic_activities": [
+      "UrbanFrac",
+      "ImperviousIndex",
+      "PopTotal",
+      "WTD",
+      "LAI"
+    ],
+    "climate_change": [
+      "Precip",
+      "Tas",
+      "Huss"
+    ],
+    "hydrogeology": [
+      "Distance_to_karst",
+      "Depth_to_Bedrock",
+      "Distance_to_Fault_m",
+      "HDS"
+    ]
+  },
+  "feature_abbreviations": {
+    "UrbanFrac": "UF",
+    "ImperviousIndex": "IP",
+    "PopTotal": "PT",
+    "WTD": "WTD",
+    "LAI": "LAI",
+    "Precip": "PR",
+    "Tas": "TAS",
+    "Huss": "HUSS",
+    "Distance_to_karst": "DK",
+    "Depth_to_Bedrock": "DB",
+    "Distance_to_Fault_m": "DF",
+    "HDS": "HDS"
+  },
+  "scenario_definition": {
+    "H0": "future true scenario",
+    "H1": "future true scenario + climate fixed at historical baseline",
+    "climate_increment": "H0 - H1"
+  },
+  "metric_definition": {
+    "point_increment_raw_score": "H0_raw_score - H1_raw_score",
+    "point_increment_susceptibility_prob": "H0_susceptibility_prob - H1_susceptibility_prob",
+    "point_change_rate": "(H0_susceptibility_prob - H1_susceptibility_prob) / abs(H0_susceptibility_prob)",
+    "province_change_rate": "(H0_susceptibility_prob_mean - H1_susceptibility_prob_mean) / abs(H0_susceptibility_prob_mean)",
+    "summary_filter": "Province summaries use points with H0_susceptibility_class >= 2 when available; provinces without such points fall back to all H0 susceptibility classes. China summary aggregates the province-wise selected points.",
+    "classification_rule": "raw GWR scores are transformed to 0-1 with mgtwr.gwr_sigmoid_utils and the saved transform metadata, then classified with saved Jenks breaks"
+  },
+  "H0_feature_columns": {
+    "UrbanFrac": "UrbanFrac_2060_2080",
+    "PopTotal": "PopTotal_2060_2080",
+    "ImperviousIndex": "ImperviousIndex_2060_2080",
+    "LAI": "LAI_2060_2080",
+    "Precip": "Precip_2060_2080",
+    "WTD": "WTD_2060_2080",
+    "HDS": "HDS_2060_2080",
+    "Tas": "Tas_2060_2080",
+    "Huss": "Huss_2060_2080"
+  },
+  "H1_feature_columns": {
+    "UrbanFrac": "UrbanFrac_2060_2080",
+    "PopTotal": "PopTotal_2060_2080",
+    "ImperviousIndex": "ImperviousIndex_2060_2080",
+    "LAI": "LAI_2060_2080",
+    "Precip": "Precip_hist_2000_2010_2020",
+    "WTD": "WTD_2060_2080",
+    "HDS": "HDS_2060_2080",
+    "Tas": "Tas_hist_2000_2010_2020",
+    "Huss": "Huss_hist_2000_2010_2020"
+  },
+  "class_breaks": [
+    0.07187923204583685,
+    0.2605378133080302,
+    0.3649038549170669,
+    0.4928459020990599,
+    0.6312823951004014,
+    0.850276083737949
+  ],
+  "transform_metadata": {
+    "method": "robust_sigmoid_iqr",
+    "center": 0.5463288240289714,
+    "scale": 0.4243924058907518,
+    "clip_z": 6.0
+  },
+  "warning_handling": {
+    "LinAlgWarning": "suppressed during gwr.predict output; the underlying numerical result is unchanged"
+  },
+  "h0_prediction_source": "reused",
+  "h1_prediction_source": "reused",
+  "artifacts": {
+    "gwr_model": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC/code_v2/3_gwr_model_train/national/GWR/gwr_model_national_GWR.pkl",
+    "class_boundaries": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC/code_v2/3_gwr_model_train/national/GWR/class_boundaries.pkl",
+    "h0_prediction_pkl": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC/code_v2/5_gwr_model_prediction/gwr_pre_Points_China_all_10km_ssp2_2080_results.pkl",
+    "h1_prediction_pkl": "/home/jing/Onedrive_liujingcsu20@163.com/Papers/4_NC/output_v2/Points_China_all_10km/ssp2/2080/climate_change/gwr_pre_climate_fixed_Points_China_all_10km_ssp2_2080_results.pkl"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "label_cutoff": 0.55,
+  "validation_size": 0.2,
+  "random_state": 42,
+  "probability_source": "raw_gwr_score_probability_transform",
+  "transform_metadata": {
+    "method": "robust_sigmoid_iqr",
+    "center": 0.5463288240289714,
+    "scale": 0.4243924058907518,
+    "clip_z": 6.0
+  },
+  "probability_threshold": 0.5367588403672224,
+  "threshold_selection": "validation_youden_j",
+  "threshold_info": {
+    "youden": 0.8676730664319949,
+    "fpr": 0.05156683855612852,
+    "tpr": 0.9192399049881235
+  },
+  "train_raw_score_stats": {
+    "min": -0.5393411574830744,
+    "max": 1.283402932876962,
+    "mean": 0.5035581510561022,
+    "std": 0.42874698621536983
+  },
+  "train_probability_stats": {
+    "min": 0.07187920729019844,
+    "max": 0.8502769635224984,
+    "mean": 0.4810222089006343,
+    "std": 0.22759334413117327
+  },
+  "train_regression_metrics": {
+    "r2": 0.776313806537769,
+    "rmse": 0.23647726692356488,
+    "mae": 0.1394045912787121
+  },
+  "train_binary_metrics": {
+    "accuracy": 0.9258877615726062,
+    "roc_auc": 0.9819650523482445
+  },
+  "validation_binary_metrics": {
+    "accuracy": 0.9338220725183277,
+    "roc_auc": 0.9835159796270316
+  }
+}
