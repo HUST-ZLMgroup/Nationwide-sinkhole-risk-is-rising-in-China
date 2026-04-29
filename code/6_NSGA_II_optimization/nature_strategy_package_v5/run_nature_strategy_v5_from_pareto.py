@@ -18,12 +18,12 @@ MAX_MITIGATION_RR_BAND = 0.90
 COST_EFFICIENCY_BAND = 0.90
 
 MAP_EN = {
-    "达标优先": "Target-first",
-    "极限减灾": "Maximum mitigation",
-    "性价比优先": "Cost-efficiency-first",
-    "平衡折中": "Balanced compromise",
+    "Target-first": "Target-first",
+    "Maximum mitigation": "Maximum mitigation",
+    "Cost-efficiency-first": "Cost-efficiency-first",
+    "Balanced compromise": "Balanced compromise",
 }
-ORDER_CN = ["达标优先", "极限减灾", "性价比优先", "平衡折中"]
+ORDER_CN = ["Target-first", "Maximum mitigation", "Cost-efficiency-first", "Balanced compromise"]
 ORDER = [MAP_EN[x] for x in ORDER_CN]
 
 COLORS = {
@@ -424,10 +424,10 @@ def build_selected_solutions(pareto: pd.DataFrame, threshold: float, summary: Op
             knee_compromise = sub.iloc[pick_knee_solution_index(sub)]
 
         selected_by_strategy = {
-            "达标优先": target_first,
-            "极限减灾": maximum_mitigation,
-            "性价比优先": cost_efficiency_first,
-            "平衡折中": knee_compromise,
+            "Target-first": target_first,
+            "Maximum mitigation": maximum_mitigation,
+            "Cost-efficiency-first": cost_efficiency_first,
+            "Balanced compromise": knee_compromise,
         }
 
         for strategy_cn, row in selected_by_strategy.items():
@@ -892,10 +892,10 @@ def make_sup_province(save_path: Path, province: pd.DataFrame):
 
 
 def write_markdown(save_path: Path, overall: pd.DataFrame, combo_counts: pd.DataFrame, selected: pd.DataFrame):
-    tf = overall.loc[overall["strategy"] == "达标优先"].iloc[0]
-    mm = overall.loc[overall["strategy"] == "极限减灾"].iloc[0]
-    ce = overall.loc[overall["strategy"] == "性价比优先"].iloc[0]
-    bc = overall.loc[overall["strategy"] == "平衡折中"].iloc[0]
+    tf = overall.loc[overall["strategy"] == "Target-first"].iloc[0]
+    mm = overall.loc[overall["strategy"] == "Maximum mitigation"].iloc[0]
+    ce = overall.loc[overall["strategy"] == "Cost-efficiency-first"].iloc[0]
+    bc = overall.loc[overall["strategy"] == "Balanced compromise"].iloc[0]
     total_grids = int(overall["n_grids"].max())
     total_sampled_pareto = len(selected["row_id"].unique()) * int(round(selected["sample_weight"].iloc[0])) if "sample_weight" in selected else len(selected)
     reached_any = combo_counts.loc[combo_counts["label"] != "None", "count"].sum()

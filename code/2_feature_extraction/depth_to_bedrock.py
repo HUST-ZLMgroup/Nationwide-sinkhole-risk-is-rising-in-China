@@ -6,37 +6,35 @@ from tqdm import tqdm
 
 
 def depth_to_bedrock(sinkhole_position, database_folder_path, output_folder_path):
-    """
-    提取每个塌陷点的基岩深度（Depth_to_Bedrock），并保存为 CSV 文件。
+    """Extract the bedrock depth (Depth_to_Bedrock) for each collapse point and save it as a CSV file.
 
-    参数
+    parameters
     ----
     sinkhole_position : pandas.DataFrame
-        主代码中已经提取好的 DataFrame，至少需要包含列：
+        The DataFrame that has been extracted in the main code needs to contain at least columns:
         'No', 'Longitude', 'Latitude'
     database_folder_path : str
-        主代码中定义的数据库根目录，例如:
+        The database root directory defined in the main code, for example:
         Z:\\jing\\Large_scale\\future_dataset
     output_folder_path : str
-        主代码根据 df_path 映射出的输出文件夹路径。
+        The output folder path mapped by the main code based on df_path.
 
-    返回
+    Return
     ----
     pandas.DataFrame
-        在原 DataFrame 基础上新增 'Depth_to_Bedrock' 列后的对象。
-    """
+        Add the object after the 'Depth_to_Bedrock' column based on the original DataFrame."""
 
-    print("\n[Depth_to_bedrock] 开始提取基岩深度信息...")
+    print("\\n[Depth_to_bedrock] Start extracting bedrock depth information...")
 
-    # ---------------- 1. 检查输入列 ----------------
+    # ---------------- 1. Check the input column ----------------
     required_cols = ["No", "Longitude", "Latitude"]
     for col in required_cols:
         if col not in sinkhole_position.columns:
             raise ValueError(
-                f"[Depth_to_bedrock] 输入的 sinkhole_position 缺少必要列: '{col}'"
+                f"[Depth_to_bedrock] sinkhole_position : '{col}'"
             )
 
-    # ---------------- 2. 设置基岩深度 TIFF 路径 ----------------
+    # ---------------- 2. Set bedrock depth TIFF path ----------------
     dtb_path = os.path.join(
         database_folder_path,
         "Geological_factors",
@@ -45,39 +43,39 @@ def depth_to_bedrock(sinkhole_position, database_folder_path, output_folder_path
     )
     if not os.path.exists(dtb_path):
         raise FileNotFoundError(
-            f"[Depth_to_bedrock] 未找到基岩深度栅格文件: {dtb_path}"
+            f"[Depth_to_bedrock] Bedrock depth raster file not found:{dtb_path}"
         )
 
-    print(f"[Depth_to_bedrock] 读取基岩深度栅格: {dtb_path}")
+    print(f"[Depth_to_bedrock] Read bedrock depth raster:{dtb_path}")
 
     dtb_values = []
 
-    # ---------------- 3. 使用 rasterio 打开 TIFF 并逐点提取 ----------------
+    # ---------------- 3. Use rasterio to open TIFF and extract point by point ----------------
     with rasterio.open(dtb_path) as src:
-        print(f"[Depth_to_bedrock] 栅格 CRS: {src.crs}")
+        print(f"[Depth_to_bedrock] Raster CRS:{src.crs}")
         print(
-            f"[Depth_to_bedrock] 栅格尺寸: 宽度={src.width}, 高度={src.height}, 分辨率={src.res}"
+            f"[Depth_to_bedrock] : ={src.width}, ={src.height}, resolution={src.res}"
         )
 
-        # tqdm 进度条
+        # tqdm progress bar
         for idx, row in tqdm(
             sinkhole_position.iterrows(),
             total=len(sinkhole_position),
-            desc="提取基岩深度",
+            desc="Extract bedrock depth",
         ):
             lon = row["Longitude"]
             lat = row["Latitude"]
 
             try:
-                # 将经纬度转换为栅格行列号
-                # 注意：src.index(x, y) 返回 (row, col)
+                # Processing step.
+                # Note: src.index(x, y) returns (row, col)
                 row_idx, col_idx = src.index(lon, lat)
             except Exception:
-                # 若转换失败，记为缺失
+                # ,
                 dtb_values.append(np.nan)
                 continue
 
-            # 判断是否在栅格范围内
+            # Determine whether it is within the grid range
             if 0 <= row_idx < src.height and 0 <= col_idx < src.width:
                 window = rasterio.windows.Window(col_idx, row_idx, 1, 1)
                 value = src.read(1, window=window)
@@ -85,33 +83,33 @@ def depth_to_bedrock(sinkhole_position, database_folder_path, output_folder_path
             else:
                 dtb_values.append(np.nan)
 
-    # ---------------- 4. 写回 DataFrame ----------------
+    # ---------------- 4. Write back DataFrame ----------------
     if len(dtb_values) != len(sinkhole_position):
         raise RuntimeError(
-            "[Depth_to_bedrock] 提取的基岩深度数量与输入点数量不一致，"
-            f"points={len(sinkhole_position)}, values={len(dtb_values)}。"
+            "[Depth_to_bedrock] The number of extracted bedrock depths is inconsistent with the number of input points."
+            f"points={len(sinkhole_position)}, values={len(dtb_values)}."
         )
 
     sinkhole_position["Depth_to_Bedrock"] = dtb_values
 
-    # ---------------- 5. 保存结果 ----------------
+    # ---------------- 5. Save the results ----------------
     output_path = os.path.join(output_folder_path, "Depth_to_Bedrock.csv")
     sinkhole_position.to_csv(output_path, index=False, encoding="utf-8-sig")
 
-    # ---------------- 6. 打印统计信息 ----------------
-    print("\n[Depth_to_bedrock] 处理完成！结果已保存至:")
+    # ---------------- 6. Print statistical information ----------------
+    print("\\n[Depth_to_bedrock] processing completed! Results have been saved to:")
     print(" ", output_path)
-    print(f"[Depth_to_bedrock] 总塌陷点数: {len(sinkhole_position)}")
+    print(f"[Depth_to_bedrock] Total collapse points:{len(sinkhole_position)}")
     print(
-        f"[Depth_to_bedrock] 成功提取深度的点数: "
+        f"[Depth_to_bedrock] The number of points successfully extracted from the depth:"
         f"{sinkhole_position['Depth_to_Bedrock'].notna().sum()}"
     )
 
     if sinkhole_position["Depth_to_Bedrock"].notna().any():
         mean_val = sinkhole_position["Depth_to_Bedrock"].mean()
-        print(f"[Depth_to_bedrock] 平均基岩深度: {mean_val:.2f} 米")
+        print(f"[Depth_to_bedrock] Average bedrock depth:{mean_val:.2f}m")
 
-    print("\n[Depth_to_bedrock] 结果预览:")
+    print("\\n[Depth_to_bedrock] Result preview:")
     print(sinkhole_position.head())
 
     return sinkhole_position

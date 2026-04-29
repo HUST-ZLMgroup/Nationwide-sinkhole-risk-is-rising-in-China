@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 """pearson_spearman_code_v6_12vars_twopanel_editable_svg.py
 
-Pearson / Spearman 相关性网络图（12变量版）
-本版按用户给定参考图继续微调：
-- 保留 Pearson 与 Spearman
-- 保留节点标签、子图标题、面板字母、色条刻度与色条标题
-- 不恢复冗余图例
-- 线宽整体减薄，弱化厚重感
-- 将不显著边画得更细、更浅
-- 保持新增 TAS 与 HUSS
-- 输出单图与双图合并版
-- SVG 文本保持为可编辑文本，不转曲、不嵌入字体
-"""
+Pearson/Spearman correlation network diagram (12-variable version)
+This version continues to be fine-tuned based on the reference image given by the user:
+- Keep Pearson and Spearman
+- Retain node labels, subgraph titles, panel letters, color bar scales and color bar titles
+- Do not restore redundant legends
+- The overall line width is thinned and the feeling of thickness is weakened.
+- Draw the inconspicuous edges thinner and lighter
+- Keep adding TAS and HUSS
+- Output single and double image merged versions
+- SVG text remains as editable text without converting or embedding fonts"""
 
 from __future__ import annotations
 
@@ -280,7 +279,7 @@ def _draw_one_panel(
     if panel_letter:
         ax.text(-1.46, 1.40, panel_letter, fontsize=12.5, fontweight="bold", ha="left", va="top")
 
-    # 色条 1：feature-feature
+    # Color bar 1: feature-feature
     cax1 = fig.add_axes([pl + pw * 0.83, pb + ph * 0.56, pw * 0.028, ph * 0.34])
     sm1 = plt.cm.ScalarMappable(cmap=cmap_edges, norm=norm_edges)
     sm1.set_array([])
@@ -290,7 +289,7 @@ def _draw_one_panel(
     cb1.ax.tick_params(labelsize=tick_fs, length=2.0, width=0.45, pad=1.0)
     cb1.set_label("Between features", rotation=270, labelpad=8, fontsize=7.6)
 
-    # 色条 2：feature-disaster
+    # Color bar 2: feature-disaster
     cax2 = fig.add_axes([pl + pw * 0.83, pb + ph * 0.08, pw * 0.028, ph * 0.34])
     sm2 = plt.cm.ScalarMappable(cmap=cmap_nodes, norm=norm_nodes)
     sm2.set_array([])
@@ -499,7 +498,7 @@ def main():
     parser.add_argument("--fig_h_cm_combo", type=float, default=6.9)
     args = parser.parse_args()
 
-    # 顺序按参考图调整，并把 TAS/HUSS 插入 PR 与 WTD 附近
+    # Adjust the sequence according to the reference picture, and insert TAS/HUSS near PR and WTD
     feature_cols = [
         "UrbanFrac_hist_2000_2010_2020",
         "Distance_to_Fault_m",

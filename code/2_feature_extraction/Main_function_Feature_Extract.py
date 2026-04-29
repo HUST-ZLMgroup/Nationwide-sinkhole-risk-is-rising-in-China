@@ -6,87 +6,87 @@ from shapely.geometry import Point
 # import rasterio
 import numpy as np
 # from rasterio.transform import from_origin
-from tqdm import tqdm  # 用于显示进度条
+from tqdm import tqdm  # is used to display the progress bar
 ###########################################################################################################
-##############################################选择路径#####################################################
+# ##########################################Select path################################################
 ###########################################################################################################
 ###########################################################################################################
 database_folder_path = os.path.join("/path/to/home/", "Large_scale", "future_dataset")
 input_folder_path = os.path.join("/path/to/home/", "PROJECT_DIR", "Papers", "4_NC", "data")
-####output_folder_path，在105行左右
+# ###output_folder_path, around line 105
 print("\ninput_folder_path:\n", input_folder_path)
 ###########################################################################################################
-#################################手动修改的变量#############################################################
+# ##############################Manually modified variables########################################################
 ###########################################################################################################
 ###########################################################################################################
 df_path = os.path.join(
-    input_folder_path, "points",                   # 全国       需要同步更改64行sinkhole_position
+    input_folder_path, "points",                   # Nationwide, 64 lines of sinkhole_position need to be changed simultaneously
 
-# =============== 全国范围的正负样本训练数据提取 ===============
-    # "Positive_Negative_balanced_25366.csv"               # 正样本+平衡负样本
-    "Points_China_all_10km.csv"                          # 全国范围无正样本的均匀网格数据10km分辨率
+# =============== National positive and negative sample training data extraction ===============
+    # "Positive_Negative_balanced_25366.csv" # Positive sample + balanced negative sample
+    "Points_China_all_10km.csv"                          # 10km
 )
 ###########################################################################################################
-#####################################18地下水没有ssp2和ssp4；17,20,21,22,23没有ssp4；###########################
+# ##################################18 Groundwater does not have ssp2 and ssp4; 17, 20, 21, 22, 23 does not have ssp4; ##########################
 ###########################################################################################################
-ssp = "ssp4"  # TODO: 根据需要手动改成 ssp1/ ssp2/ssp3/ssp4/ssp5/ 选择'ssp2'注释掉18地下水，打开需求10.6 /选择 'ssp4'注释掉10叶面积指数，17降雨，18地下水,20,21,22,23,打开需求10.7
+ssp = "ssp4"  # TODO: Manually change to ssp1/ ssp2/ssp3/ssp4/ssp5/ as needed. Select 'ssp2' to comment out 18 groundwater, open the requirement 10.6 / Select 'ssp4' to comment out 10 leaf area index, 17 rainfall, 18 groundwater, 20, 21, 22, 23, open the requirement 10.7
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
 df = pd.read_csv(df_path)
 
-# 提取关键列
-# sinkhole_position = df[['No', 'Disaster', 'Longitude', 'Latitude', 'ADCODE99', 'NAME_EN_JX']].copy()  #全国范围有地陷
-sinkhole_position = df[['No', 'Disaster', 'Longitude', 'Latitude', 'ADCODE99', 'NAME_EN_JX']].copy()  #全国范围无地陷
+# Extract key columns
+# sinkhole_position = df[['No', 'Disaster', 'Longitude', 'Latitude', 'ADCODE99', 'NAME_EN_JX']].copy() # nationwide sinkhole
+sinkhole_position = df[['No', 'Disaster', 'Longitude', 'Latitude', 'ADCODE99', 'NAME_EN_JX']].copy()  # Processing step.
 
-# 检查结果
+# Check results
 print(sinkhole_position.head())
-print(f"\n提取完成！共 {len(sinkhole_position)} 条记录")
+print(f"\n extraction completed! total{len(sinkhole_position)}records")
 ###########################################################################################################
-########################################创建输入到输出路径的映射表###########################################
+# #####################################Create a mapping table from input to output paths#########################################
 ###########################################################################################################
 ###########################################################################################################
-# ========= 关键判断部分：根据 df_path 选择 output_folder_path =========
-# 文件名 -> 子文件夹名 的映射
+# ========= : df_path output_folder_path =========
+# File name -> subfolder name mapping
 csv_to_subfolder = {
-# =============== 全国范围的正负样本训练数据提取 ===============
+# =============== National positive and negative sample training data extraction ===============
     "Positive_Negative_balanced_25366.csv": "Positive_Negative_balanced",
     "Points_China_all_10km.csv": "Points_China_all_10km",
 
 }
-# 从 df_path 里取出文件名
+# Get the file name from df_path
 csv_name = os.path.basename(df_path)
 if csv_name not in csv_to_subfolder:
-    raise ValueError(f"未知的 df_path 文件名: {csv_name}，请在 csv_to_subfolder 中添加映射。")
+    raise ValueError(f"Unknown df_path filename:{csv_name}, please add mapping in csv_to_subfolder.")
 output_folder_path = os.path.join(input_folder_path, "Extracted_HAVE_future",csv_to_subfolder[csv_name])
-# 如果需要，可以顺便确保目录存在
+# If necessary, you can make sure the directory exists
 os.makedirs(output_folder_path, exist_ok=True)
-print("\n保存提取的特征到文件夹:\n", output_folder_path)
+print("\\n Save the extracted features to the folder: \\n", output_folder_path)
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
 ###########################################################################################################
-# 为历史 / 未来数据分别建立子文件夹，并为未来情景建立 SSP 子文件夹
+# Create separate subfolders for historical/future data, and create SSP subfolders for future scenarios
 ###########################################################################################################
 
-# 1) 在 output_folder_path 下新建 historical 和 future 两个子文件夹
+# 1) Create two new subfolders, historical and future, under output_folder_path
 historical_folder_path = os.path.join(output_folder_path, "historical")
 future_folder_path = os.path.join(output_folder_path, "future")
 
 os.makedirs(historical_folder_path, exist_ok=True)
 os.makedirs(future_folder_path, exist_ok=True)
 
-# 3) 在 future 文件夹下面，为当前 SSP 建立子文件夹
+# 3) Under the future folder, create a subfolder for the current SSP
 future_ssp_folder_path = os.path.join(future_folder_path, ssp)
 os.makedirs(future_ssp_folder_path, exist_ok=True)
 
-print("\n历史数据输出文件夹:\n", historical_folder_path)
-print("未来数据输出文件夹(当前 SSP 情景):\n", future_ssp_folder_path)
+print("\\n historical data output folder: \\n", historical_folder_path)
+print("( SSP ):\\n", future_ssp_folder_path)
 ###########################################################################################################
 
 ###########################################################################################################
-################## 计算与岩溶区的最近距离，并保存到 historical_folder_path/Distance_to_karst.csv##############
+# ################# Calculate the closest distance to the karst area and save it to historical_folder_path/Distance_to_karst.csv##############
 ###########################################################################################################
 from distance_to_karst import distance_to_karst
 sinkhole_position = distance_to_karst(
@@ -95,7 +95,7 @@ sinkhole_position = distance_to_karst(
     historical_folder_path,
 )
 ###########################################################################################################
-################# 提取基岩深度信息，并保存到 historical_folder_path/Depth_to_Bedrock.csv#####################
+# ############### Extract bedrock depth information and save it to historical_folder_path/Depth_to_Bedrock.csv####################
 ###########################################################################################################
 from depth_to_bedrock import depth_to_bedrock
 sinkhole_position = depth_to_bedrock(
@@ -104,7 +104,7 @@ sinkhole_position = depth_to_bedrock(
     historical_folder_path,
 )
 ###########################################################################################################
-##################### 计算与断层的最近距离，并保存到 historical_folder_path/Distance_to_Fault.csv#############
+# #################### Calculate the closest distance to the fault and save it to historical_folder_path/Distance_to_Fault.csv#############
 ###########################################################################################################
 from distance_to_fault import distance_to_fault
 sinkhole_position = distance_to_fault(
@@ -113,7 +113,7 @@ sinkhole_position = distance_to_fault(
     historical_folder_path,
 )
 ##########################################################################################################
-############ 计算城市土地与所有土地面积的比例，并保存到historical_folder_path和future_ssp_folder_path#########
+# ########### ,historical_folder_pathfuture_ssp_folder_path#########
 ##########################################################################################################
 from urban_land_fraction import urban_land_fraction
 sinkhole_position = urban_land_fraction(
@@ -124,7 +124,7 @@ sinkhole_position = urban_land_fraction(
     ssp,
 )
 ###########################################################################################################
-######################### 计算人口总数，并保存到historical_folder_path和future_ssp_folder_path###############
+# ######################## Calculate the total population and save it to historical_folder_path and future_ssp_folder_path##############
 ###########################################################################################################
 from population_total import population_total
 sinkhole_position = population_total(
@@ -135,7 +135,7 @@ sinkhole_position = population_total(
     ssp,
 )
 ###########################################################################################################
-######### 不透水指数（0-100,0是透水，100是不透水），并保存到historical_folder_path和future_ssp_folder_path#####
+# ######## Impermeability index (0-100, 0 is water permeable, 100 is impermeable), and saved to historical_folder_path and future_ssp_folder_path#####
 ###########################################################################################################
 from impervious_index import impervious_index
 sinkhole_position = impervious_index(
@@ -146,7 +146,7 @@ sinkhole_position = impervious_index(
     ssp,
 )
 # ###########################################################################################################
-# ######### 叶面积指数（LAI）（时间分辨率是按月，空间分辨率是2.5 弧），并保存#####################################
+# ######### Leaf area index (LAI) (temporal resolution is monthly, spatial resolution is 2.5 arcs), and save ###################################
 # ###########################################################################################################
 # from leaf_area_index import leaf_area_index
 # sinkhole_position = leaf_area_index(
@@ -157,7 +157,7 @@ sinkhole_position = impervious_index(
 #     ssp,
 # )
 # ##########################################################################################################
-# ####################### 降水量，分辨率0.25度（25公里），时间分辨率为年度#####################################
+# ####################### Precipitation, resolution 0.25 degrees (25 km), time resolution annual ###################################
 # ##########################################################################################################
 # from precipitation_amount import precipitation_amount
 # sinkhole_position = precipitation_amount(
@@ -217,7 +217,7 @@ sinkhole_position = impervious_index(
 # )
 
 # #########################################################################################################
-# ####### 地下水：因素wtd - Water Table Depth
+# ####### Groundwater: factors wtd - Water Table Depth
 # #########################################################################################################
 # from groundwater_wtd import groundwater_wtd
 # sinkhole_position = groundwater_wtd(
@@ -228,7 +228,7 @@ sinkhole_position = impervious_index(
 #     ssp,
 # )
 # ##########################################################################################################
-# ######### 地下水：因素hds - Groundwater Head
+# ######### Groundwater: Factors hds - Groundwater Head
 # ###########################################################################################################
 # from groundwater_hds import groundwater_hds
 # sinkhole_position = groundwater_hds(
@@ -239,7 +239,7 @@ sinkhole_position = impervious_index(
 #     ssp,
 # )
 # ###########################################################################################################
-# ########################################需求10.51：全局变量暂存##############################################
+# ########################################10.51:##############################################
 # ###########################################################################################################
 from feature_state_io import save_feature_state
 save_feature_state(
@@ -252,11 +252,11 @@ save_feature_state(
     historical_folder_path=historical_folder_path,
     future_folder_path=future_folder_path,
     future_ssp_folder_path=future_ssp_folder_path,
-    # 如果你还有其他变量想存，比如 csv_to_subfolder，也可以：
+    # If you have other variables you want to save, such as csv_to_subfolder, you can also:
     # extra_vars={"csv_to_subfolder": csv_to_subfolder}
 )
 # ###########################################################################################################
-# ########################################需求10.52：全局变量调用##############################################
+# ######################################Requirement 10.52: Global variable call ###########################################
 # ###########################################################################################################
 # from feature_state_io import load_feature_state
 
@@ -271,7 +271,7 @@ save_feature_state(
 # future_ssp_folder_path = state["future_ssp_folder_path"]
 
 # ###########################################################################################################
-# ########################################需求10.6：对ssp2缺失的10列数据插值###################################
+# #####################################Requirement 10.6: Interpolate the missing 10 columns of data in ssp2##################################
 # ###########################################################################################################
 # from post_processing_for_ssp2 import post_processing_for_ssp2
 
@@ -284,7 +284,7 @@ save_feature_state(
 #     ssp=ssp,
 # )
 ###########################################################################################################
-########################################需求10.7：对ssp4缺失的20列数据插值###################################
+# ####################################Requirement 10.7: Interpolate the 20 missing columns of data in ssp4##################################
 ###########################################################################################################
 from post_processing_for_ssp4 import post_processing_for_ssp4
 
@@ -297,25 +297,25 @@ sinkhole_position = post_processing_for_ssp4(
     ssp=ssp,
 )
 ###########################################################################################################
-##################################需求11：保存总的sinkhole_position到csv文件################################
+# #################################11:sinkhole_positioncsv################################
 ###########################################################################################################
 ###########################################################################################################
 from aggregate_features import aggregate_features
 sinkhole_position = aggregate_features(
     sinkhole_position=sinkhole_position,
     df_path=df_path,
-    output_folder_path=output_folder_path,  # 对应 csv_to_subfolder 映射后的目录
-    ssp=ssp,  # 如果你希望区分不同 SSP，就传入；不想区分也可以写 None
+    output_folder_path=output_folder_path,  # corresponds to the directory mapped by csv_to_subfolder
+    ssp=ssp,  # SSP,; None
 )
 ###########################################################################################################
-##########需求12：对汇总后的sinkhole_position做清洗 + 打乱+极小值防止奇异解，并输出 *_cleaned.csv#############
+# #########Requirement 12: Clean + scramble + minimize the summarized sinkhole_position to prevent singular solutions, and output *_cleaned.csv#############
 ###########################################################################################################
 from data_clean_shuffle import data_clean_and_shuffle
 sinkhole_position_cleaned = data_clean_and_shuffle(
     sinkhole_position=sinkhole_position,
     df_path=df_path,
-    output_folder_path=output_folder_path,  # 对应 csv_to_subfolder 映射后的目录
-    ssp=ssp,  # 如果你希望区分不同 SSP，就传入；不想区分也可以写 None
+    output_folder_path=output_folder_path,  # corresponds to the directory mapped by csv_to_subfolder
+    ssp=ssp,  # SSP,; None
     random_state=42,
 )
 ##########################################################################################################

@@ -9,32 +9,30 @@ try:
     HAS_SCIPY = True
 except ImportError:
     HAS_SCIPY = False
-    print("[GroundwaterWTD] 未安装 scipy，将跳过‘最近样本点补值’，只保留原始插值结果。")
+    print("[GroundwaterWTD] scipy,‘’,.")
 
 
 def _fill_nans_by_nearest_sample(values, lons, lats, label_prefix="[GroundwaterWTD]"):
-    """
-    在“塌陷点样本集合”内部，用最近的有值样本来填补 NaN。
+    """Within the "collapse point sample set", NaNs are padded with the nearest valuable sample.
 
-    values : 一维数组，长度 = n_points（某一年的 WTD）
-    lons, lats : 对应点的经纬度
-    返回：填补后的 values（新数组，不在原地修改）
-    """
+    values: one-dimensional array, length = n_points (WTD of a certain year)
+    lons, lats: the latitude and longitude of the corresponding point
+    Return: filled values (new array, not modified in place)"""
     values = np.asarray(values, dtype="float64")
     lons = np.asarray(lons, dtype="float64")
     lats = np.asarray(lats, dtype="float64")
 
     if not HAS_SCIPY:
-        print(f"{label_prefix} 未安装 scipy，跳过最近样本点补值，保持 NaN。")
+        print(f"{label_prefix}scipy is not installed, skip the nearest sample point complement and keep NaN.")
         return values
 
     mask_valid = np.isfinite(values)
     if mask_valid.all():
-        # 没有缺失，无需补
+        # ,
         return values
     if not np.any(mask_valid):
-        # 全是 NaN，也没法补
-        print(f"{label_prefix} 警告：该年份所有点均为 NaN，无法做最近点补值。")
+        # They are all NaN and cannot be corrected.
+        print(f"{label_prefix}Warning: All points in this year are NaN, and the nearest point complement cannot be done.")
         return values
 
     coords_valid = np.column_stack([lons[mask_valid], lats[mask_valid]])
@@ -50,27 +48,19 @@ def _fill_nans_by_nearest_sample(values, lons, lats, label_prefix="[GroundwaterW
 
 
 def _extract_wtd_from_zarr(store_path, years, sinkhole_position, label_prefix="[GroundwaterWTD]"):
-    """
-    从给定 Zarr 数据集中，针对指定年份列表，提取每个塌陷点的
-    年平均 WTD（Water Table Depth），返回 {year: np.ndarray}。
-
-    步骤：
-    1. 对指定年份，从 time 维上取出对应年份并求年平均 -> 2D 场 (lat, lon)
-    2. 使用 xarray 的 .sel(lat, lon, method="nearest") 对每个塌陷点插值
-    3. 对于插值后仍为 NaN 的点，用“最近有值的样本点”填补（需求 9.1）
-    """
+    """Zarr ,, WTD(Water Table Depth), {year: np.ndarray}. : 1. , time -> 2D (lat, lon) 2. xarray .sel(lat, lon, method="nearest") 3. NaN ,""( 9.1)"""
 
     if not years:
         return {}
 
     if not os.path.exists(store_path):
-        raise FileNotFoundError(f"{label_prefix} 未找到 Zarr 数据集: {store_path}")
+        raise FileNotFoundError(f"{label_prefix}Zarr dataset not found:{store_path}")
 
-    print(f"{label_prefix} 打开 Zarr 数据集: {store_path}")
+    print(f"{label_prefix}Open the Zarr dataset:{store_path}")
 
     ds = xr.open_zarr(store_path)
     try:
-        # 1. 选 WTD 变量：优先 l1_wtd -> wtd -> WTD -> l2_wtd
+        # 1. Select WTD variable: priority l1_wtd -> wtd -> WTD -> l2_wtd
         candidate_vars = ["l1_wtd", "wtd", "WTD", "l2_wtd"]
         wtd_var = None
         for v in candidate_vars:
@@ -79,11 +69,11 @@ def _extract_wtd_from_zarr(store_path, years, sinkhole_position, label_prefix="[
                 break
         if wtd_var is None:
             wtd_var = list(ds.data_vars)[0]
-            print(f"{label_prefix} 警告: 未找到 l1_wtd/l2_wtd，使用变量 {wtd_var}")
+            print(f"{label_prefix}Warning: l1_wtd/l2_wtd not found, using variable{wtd_var}")
 
         da = ds[wtd_var]
 
-        # 2. 统一经纬度名字：把 latitude/longitude 改成 lat/lon（无论是坐标还是维度）
+        # 2. Unify longitude and latitude names: change latitude/longitude to lat/lon (either coordinates or dimensions)
         rename_dict = {}
         if "latitude" in ds.coords or "latitude" in ds.dims:
             rename_dict["latitude"] = "lat"
@@ -94,11 +84,11 @@ def _extract_wtd_from_zarr(store_path, years, sinkhole_position, label_prefix="[
             da = ds[wtd_var]
 
         if "lat" not in ds.coords or "lon" not in ds.coords:
-            raise ValueError(f"{label_prefix} 数据中缺少 'lat'/'lon' 坐标，请检查 Zarr 结构。")
+            raise ValueError(f"{label_prefix}'lat'/'lon' , Zarr .")
 
-        # 3. 时间 -> 年份
+        # 3. Time -> Year
         if "time" not in ds.coords:
-            raise ValueError(f"{label_prefix} 数据集中缺少 'time' 坐标。")
+            raise ValueError(f"{label_prefix}The 'time' coordinate is missing from the dataset.")
 
         time_coord = ds["time"]
         tvals = time_coord.values
@@ -107,7 +97,7 @@ def _extract_wtd_from_zarr(store_path, years, sinkhole_position, label_prefix="[
         else:
             years_all = np.array(tvals).astype(int)
 
-        # 4. 准备塌陷点坐标
+        # 4. Prepare the coordinates of the collapse point
         lats_pts = sinkhole_position["Latitude"].values
         lons_pts = sinkhole_position["Longitude"].values
         pts_lat = xr.DataArray(lats_pts, dims="points")
@@ -119,19 +109,19 @@ def _extract_wtd_from_zarr(store_path, years, sinkhole_position, label_prefix="[
             idxs = np.where(years_all == year)[0]
             if idxs.size == 0:
                 raise ValueError(
-                    f"{label_prefix} 在 {store_path} 中未找到年份 {year} 对应的 time 条目。"
+                    f"{label_prefix}: {store_path} has no time entry for year {year}."
                 )
 
-            print(f"{label_prefix} 处理年份 {year} ...")
+            print(f"{label_prefix}Processing year{year} ...")
             da_year = da.isel(time=idxs)
             da_year_mean = da_year.mean(dim="time")
 
-            # 5. 先做标准的最近邻插值
+            # 5. Do standard nearest neighbor interpolation first
             sample = da_year_mean.sel(lat=pts_lat, lon=pts_lon, method="nearest")
             vals = sample.values.astype("float64")
             vals = np.where(np.isfinite(vals), vals, np.nan)
 
-            # 6. 再在“样本集合内部”用最近有值样本补 NaN（需求 9.1）
+            # 6. "" NaN( 9.1)
             vals_filled = _fill_nans_by_nearest_sample(
                 vals, lons_pts, lats_pts, label_prefix=f"{label_prefix}-year{year}"
             )
@@ -151,58 +141,56 @@ def groundwater_wtd(
     future_ssp_folder_path,
     ssp,
 ):
-    """
-    地下水埋深 WTD（Water Table Depth）提取与历史/未来时间段平均计算（含 9.1 最近样本点补值）。
+    """Groundwater burial depth WTD (Water Table Depth) extraction and historical/future time period average calculation (including 9.1 recent sample point supplementary values).
 
-    数据结构
+    data structure
     --------
-    根目录:
+    Root directory:
       Z:\\jing\\Large_scale\\future_dataset\\18_groundwater_1960_2100_1km\\Annual
 
-    · 历史 (1960–2014):
+    · History (1960–2014):
       Annual\\historical\\wtd_annual_1960_2014_historical_ensemble.zarr
 
-    · 未来 SSP (2015–2100):
+    · Future SSP (2015–2100):
       Annual\\sspxxx\\wtd_annual_2015_2100_sspxxx_ensemble.zarr
 
-      其中 sspxxx 与 ssp 映射（忽略大小写）为：
+      The mapping between sspxxx and ssp (ignoring case) is:
         ssp=ssp1 -> ssp126
         ssp=ssp3 -> ssp370
         ssp=ssp5 -> ssp585
 
-    计算规则
+    Calculation rules
     --------
-    · 每个年份：使用该年 WTD 年平均值（对 time 维求均值），
-      然后对塌陷点插值 + 最近样本点补值。
+    · Each year: use the annual mean of WTD for that year (averaged over the time dimension),
+      Then interpolate the collapse point + complement the nearest sample point.
 
-    · 历史：
-        使用 2000, 2010, 2020 三年的 WTD 取平均：
-        - 2000, 2010 来自 historical
-        - 2020 来自对应 SSP 数据集 (2015+)
-        输出列：WTD_hist_2000_2010_2020
+    · History:
+        Use the three-year WTD of 2000, 2010, and 2020 to average:
+        - 2000, 2010 from historical
+        - 2020 from the corresponding SSP dataset (2015+)
+        Output column: WTD_hist_2000_2010_2020
 
-    · 未来：
-        以 20 年为时间段，以 10 年为间隔取平均：
+    · Future:
+        Average over a 20-year period and 10-year intervals:
         - 2020–2040: 2020, 2030, 2040
         - 2040–2060: 2040, 2050, 2060
         - 2060–2080: 2060, 2070, 2080
         - 2080–2100: 2080, 2090, 2100
 
-        输出列：
-        WTD_2020_2040, WTD_2040_2060, WTD_2060_2080, WTD_2080_2100
-    """
+        Output columns:
+        WTD_2020_2040, WTD_2040_2060, WTD_2060_2080, WTD_2080_2100"""
 
-    print("\n[GroundwaterWTD] 开始计算地下水埋深 (WTD) ...")
+    print("\\n[GroundwaterWTD] Start calculating groundwater depth (WTD)...")
 
-    # ---------- 1. 检查输入列 ----------
+    # ---------- 1. Check the input column ----------
     required_cols = ["No", "Longitude", "Latitude"]
     for col in required_cols:
         if col not in sinkhole_position.columns:
             raise ValueError(
-                f"[GroundwaterWTD] 输入的 sinkhole_position 缺少必要列: '{col}'"
+                f"[GroundwaterWTD] The input sinkhole_position is missing a required column: '{col}'"
             )
 
-    # ---------- 2. SSP -> sspxxx 映射 ----------
+    # ---------- 2. SSP -> sspxxx ----------
     ssp_to_sspxxx = {
         "ssp1": "ssp126",
         "ssp3": "ssp370",
@@ -211,11 +199,11 @@ def groundwater_wtd(
     ssp_key = ssp.lower()
     if ssp_key not in ssp_to_sspxxx:
         raise ValueError(
-            f"[GroundwaterWTD] 不支持的 SSP 情景: {ssp}，仅支持 {list(ssp_to_sspxxx.keys())}"
+            f"[GroundwaterWTD] SSP :{ssp},{list(ssp_to_sspxxx.keys())}"
         )
-    sspxxx = ssp_to_sspxxx[ssp_key]  # 如 'ssp3' -> 'ssp370'
+    sspxxx = ssp_to_sspxxx[ssp_key]  # Such as 'ssp3' -> 'ssp370'
 
-    # ---------- 3. 构造路径 ----------
+    # ---------- 3. Construct path ----------
     gw_root = os.path.join(
         database_folder_path,
         "18_groundwater_1960_2100_1km",
@@ -235,11 +223,11 @@ def groundwater_wtd(
         f"wtd_annual_2015_2100_{sspxxx}_ensemble.zarr",
     )
 
-    print(f"[GroundwaterWTD] 历史 Zarr: {hist_store}")
+    print(f"[GroundwaterWTD] History Zarr:{hist_store}")
     print(f"[GroundwaterWTD] SSP   Zarr: {ssp_store}")
-    print(f"[GroundwaterWTD] 当前 SSP: {ssp} -> {sspxxx}")
+    print(f"[GroundwaterWTD] SSP:{ssp} -> {sspxxx}")
 
-    # ---------- 4. 需要的年份 ----------
+    # ---------- 4. Required year ----------
     hist_years = [2000, 2010, 2020]
 
     future_windows = {
@@ -252,10 +240,10 @@ def groundwater_wtd(
     all_future_years = sorted({y for ys in future_windows.values() for y in ys})
     years_needed = sorted(set(hist_years + all_future_years))
 
-    hist_years_store = [y for y in years_needed if y < 2015]   # 用历史 zarr
-    ssp_years_store = [y for y in years_needed if y >= 2015]   # 用 SSP zarr
+    hist_years_store = [y for y in years_needed if y < 2015]   # Use history zarr
+    ssp_years_store = [y for y in years_needed if y >= 2015]   # SSP zarr
 
-    # ---------- 5. 从 Zarr 提取各年份 WTD ----------
+    # ---------- 5. Extract WTD of each year from Zarr ----------
     year_values = {}
 
     hist_map = _extract_wtd_from_zarr(
@@ -277,28 +265,28 @@ def groundwater_wtd(
     missing_years = [y for y in years_needed if y not in year_values]
     if missing_years:
         raise RuntimeError(
-            f"[GroundwaterWTD] 以下年份未能从 Zarr 中提取: {missing_years}"
+            f"[GroundwaterWTD] Zarr :{missing_years}"
         )
 
-    # ---------- 6. 历史平均 (2000, 2010, 2020) ----------
-    print("[GroundwaterWTD] 计算历史平均 (2000, 2010, 2020)...")
+    # ---------- 6. Historical average (2000, 2010, 2020) ----------
+    print("[GroundwaterWTD] (2000, 2010, 2020)...")
     hist_stack = np.vstack([year_values[y] for y in hist_years])
     hist_mean = np.nanmean(hist_stack, axis=0)
     hist_col = "WTD_hist_2000_2010_2020"
     sinkhole_position[hist_col] = hist_mean
 
-    # ---------- 7. 未来各时间段平均 ----------
+    # ---------- 7. Average for each time period in the future ----------
     for col_name, ys in future_windows.items():
-        print(f"[GroundwaterWTD] 计算未来时间段 {col_name} 对应年份 {ys} 的平均...")
+        print(f"[GroundwaterWTD]{col_name}Corresponding year{ys}...")
         stack = np.vstack([year_values[y] for y in ys])
         mean_vals = np.nanmean(stack, axis=0)
         sinkhole_position[col_name] = mean_vals
 
-    # ---------- 8. 保存结果 ----------
+    # ---------- 8. Save the result ----------
     os.makedirs(historical_folder_path, exist_ok=True)
     os.makedirs(future_ssp_folder_path, exist_ok=True)
 
-    # 历史 CSV
+    # History CSV
     hist_out_cols = ["No", "Longitude", "Latitude", hist_col]
     hist_out_cols = [c for c in hist_out_cols if c in sinkhole_position.columns]
     hist_df = sinkhole_position[hist_out_cols].copy()
@@ -308,7 +296,7 @@ def groundwater_wtd(
     )
     hist_df.to_csv(hist_output_path, index=False, encoding="utf-8-sig")
 
-    # 未来 CSV
+    # Future CSV
     future_out_cols = ["No", "Longitude", "Latitude"] + list(future_windows.keys())
     future_out_cols = [c for c in future_out_cols if c in sinkhole_position.columns]
     future_df = sinkhole_position[future_out_cols].copy()
@@ -318,28 +306,28 @@ def groundwater_wtd(
     )
     future_df.to_csv(future_output_path, index=False, encoding="utf-8-sig")
 
-    # ---------- 9. 打印简单统计 ----------
-    print("\n[GroundwaterWTD] 历史数据统计 (2000, 2010, 2020 的平均):")
+    # ---------- 9. Print simple statistics ----------
+    print("\\n[GroundwaterWTD] (2000, 2010, 2020 ):")
     if not hist_df[hist_col].isna().all():
-        print(f"  点数: {len(hist_df)}")
-        print(f"  最小值: {hist_df[hist_col].min():.4f}")
-        print(f"  最大值: {hist_df[hist_col].max():.4f}")
-        print(f"  平均值: {hist_df[hist_col].mean():.4f}")
+        print(f"Points:{len(hist_df)}")
+        print(f"Minimum value:{hist_df[hist_col].min():.4f}")
+        print(f":{hist_df[hist_col].max():.4f}")
+        print(f"Average:{hist_df[hist_col].mean():.4f}")
 
-    print("\n[GroundwaterWTD] 未来各时间段统计:")
+    print("\\n[GroundwaterWTD] :")
     for col_name in future_windows.keys():
         col_series = future_df[col_name]
         if col_series.isna().all():
             continue
         print(f"  {col_name}:")
-        print(f"    点数: {len(col_series)}")
-        print(f"    最小值: {col_series.min():.4f}")
-        print(f"    最大值: {col_series.max():.4f}")
-        print(f"    平均值: {col_series.mean():.4f}")
+        print(f":{len(col_series)}")
+        print(f":{col_series.min():.4f}")
+        print(f"Maximum value:{col_series.max():.4f}")
+        print(f"Average:{col_series.mean():.4f}")
 
-    print("\n[GroundwaterWTD] 历史结果已保存至:")
+    print("\\n[GroundwaterWTD] Historical results have been saved to:")
     print("  ", hist_output_path)
-    print("[GroundwaterWTD] 未来结果已保存至:")
+    print("[GroundwaterWTD] :")
     print("  ", future_output_path)
 
     return sinkhole_position

@@ -24,47 +24,47 @@ def to_int_adcode(x):
 
 # ADCODE99 -> (DIV_CN, DIV_EN)
 adcode_to_div = {
-    # 华北
-    110000: ("华北", "North China"),
-    120000: ("华北", "North China"),
-    130000: ("华北", "North China"),
-    140000: ("华北", "North China"),
-    150000: ("华北", "North China"),
-    370000: ("华北", "North China"),
-    # 东北
-    210000: ("东北", "Northeast China"),
-    220000: ("东北", "Northeast China"),
-    230000: ("东北", "Northeast China"),
-    # 华东
-    310000: ("华东", "East China"),
-    320000: ("华东", "East China"),
-    330000: ("华东", "East China"),
-    340000: ("华东", "East China"),
-    # 华南
-    350000: ("华南", "South China"),
-    440000: ("华南", "South China"),
-    450000: ("华南", "South China"),
-    460000: ("华南", "South China"),
-    # 华中
-    410000: ("华中", "Central China"),
-    420000: ("华中", "Central China"),
-    430000: ("华中", "Central China"),
-    360000: ("华中", "Central China"),
-    # 西南
-    500000: ("西南", "Southwest China"),
-    510000: ("西南", "Southwest China"),
-    520000: ("西南", "Southwest China"),
-    530000: ("西南", "Southwest China"),
-    540000: ("西南", "Southwest China"),
-    # 西北
-    610000: ("西北", "Northwest China"),
-    620000: ("西北", "Northwest China"),
-    630000: ("西北", "Northwest China"),
-    640000: ("西北", "Northwest China"),
-    650000: ("西北", "Northwest China"),
+    # North China
+    110000: ("North China", "North China"),
+    120000: ("North China", "North China"),
+    130000: ("North China", "North China"),
+    140000: ("North China", "North China"),
+    150000: ("North China", "North China"),
+    370000: ("North China", "North China"),
+    # Northeast
+    210000: ("Northeast", "Northeast China"),
+    220000: ("Northeast", "Northeast China"),
+    230000: ("Northeast", "Northeast China"),
+    # East China
+    310000: ("East China", "East China"),
+    320000: ("East China", "East China"),
+    330000: ("East China", "East China"),
+    340000: ("East China", "East China"),
+    # South China
+    350000: ("South China", "South China"),
+    440000: ("South China", "South China"),
+    450000: ("South China", "South China"),
+    460000: ("South China", "South China"),
+    # Central China
+    410000: ("Central China", "Central China"),
+    420000: ("Central China", "Central China"),
+    430000: ("Central China", "Central China"),
+    360000: ("Central China", "Central China"),
+    # Southwest
+    500000: ("Southwest", "Southwest China"),
+    510000: ("Southwest", "Southwest China"),
+    520000: ("Southwest", "Southwest China"),
+    530000: ("Southwest", "Southwest China"),
+    540000: ("Southwest", "Southwest China"),
+    # Northwest China
+    610000: ("Northwest China", "Northwest China"),
+    620000: ("Northwest China", "Northwest China"),
+    630000: ("Northwest China", "Northwest China"),
+    640000: ("Northwest China", "Northwest China"),
+    650000: ("Northwest China", "Northwest China"),
 }
 
-# ADCODE99 -> NAME_EN_JX（按你给的表）
+# ADCODE99 -> NAME_EN_JX (according to the table you gave)
 adcode_to_name_en = {
     510000: "Sichuan",
     460000: "Hainan",
@@ -99,32 +99,32 @@ adcode_to_name_en = {
     140000: "Shanxi",
 }
 
-# 读取
+# Read
 gdf = gpd.read_file(province_no_TW_AM_HK_shp)
 if "ADCODE99" not in gdf.columns:
-    raise KeyError(f"输入 shp 缺少字段 ADCODE99。现有字段：{list(gdf.columns)}")
+    raise KeyError(f"Input shp is missing field ADCODE99. Existing fields:{list(gdf.columns)}")
 
 gdf["_ADCODE99_INT"] = gdf["ADCODE99"].apply(to_int_adcode)
 
-# 生成分区列（Shapefile 字段名<=10，所以用 DIV_CN / DIV_EN）
+# Generate partition column (Shapefile field name <=10, so use DIV_CN / DIV_EN)
 gdf["DIV_CN"] = gdf["_ADCODE99_INT"].map(lambda k: adcode_to_div.get(k, (None, None))[0])
 gdf["DIV_EN"] = gdf["_ADCODE99_INT"].map(lambda k: adcode_to_div.get(k, (None, None))[1])
 
-# 确保 NAME_EN_JX 存在并补齐
+# Make sure NAME_EN_JX exists and is completed
 if "NAME_EN_JX" not in gdf.columns:
     gdf["NAME_EN_JX"] = None
 gdf["NAME_EN_JX"] = gdf["NAME_EN_JX"].fillna(gdf["_ADCODE99_INT"].map(adcode_to_name_en))
 
-# 检查未匹配
+# Check not matched
 unmatched = gdf[gdf["DIV_CN"].isna() | gdf["DIV_EN"].isna() | gdf["NAME_EN_JX"].isna()]
 if len(unmatched) > 0:
     bad = sorted(set(unmatched["_ADCODE99_INT"].tolist()))
-    raise ValueError(f"存在未匹配/缺失的 ADCODE99：{bad}。请检查输入 shp 是否包含异常记录。")
+    raise ValueError(f"There is an unmatched/missing ADCODE99:{bad}. Please check whether the input shp contains abnormal records.")
 
-# 只保留你要的列（含 NAME_EN_JX）
+# Only keep the columns you want (including NAME_EN_JX)
 gdf_out = gdf[["ADCODE99", "NAME_EN_JX", "DIV_CN", "DIV_EN", "geometry"]].copy()
 
-# 清理旧输出同名文件组
+# Remove any existing output shapefile sidecar files before writing.
 out_dir = os.path.dirname(province_no_TW_AM_HK_geographical_division_shp)
 os.makedirs(out_dir, exist_ok=True)
 base = os.path.splitext(province_no_TW_AM_HK_geographical_division_shp)[0]
@@ -134,12 +134,12 @@ for f in glob.glob(base + ".*"):
     except Exception:
         pass
 
-# 保存
+# Save
 gdf_out.to_file(
     province_no_TW_AM_HK_geographical_division_shp,
     driver="ESRI Shapefile",
-    encoding="UTF-8",  # 如 ArcGIS 中文乱码可改 GBK
+    encoding="UTF-8",  # For example, ArcGIS Chinese garbled characters can be changed to GBK
 )
 
-print("✅ 输出完成：", province_no_TW_AM_HK_geographical_division_shp)
-print("输出字段：ADCODE99, NAME_EN_JX, DIV_CN, DIV_EN, geometry")
+print("✅ Output completed:", province_no_TW_AM_HK_geographical_division_shp)
+print("Output fields: ADCODE99, NAME_EN_JX, DIV_CN, DIV_EN, geometry")

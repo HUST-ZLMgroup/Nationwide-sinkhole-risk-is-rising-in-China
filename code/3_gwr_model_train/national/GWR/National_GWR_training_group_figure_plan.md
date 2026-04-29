@@ -10,7 +10,7 @@ Recommended figure title:
 
 Recommended Chinese title:
 
-**图 X. 全国地面塌陷概率 GWR 模型的阈值诊断、训练概率结构与验证。**
+**Figure X. Threshold diagnosis, training probability structure and verification of the national ground collapse probability GWR model. **
 
 ## Shared Style Rules
 

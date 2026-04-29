@@ -6,13 +6,11 @@ import time
 
 
 def golden_section(a, c, A, C, tau_decimal, delta, function, tol, max_iter, int_score=False, verbose=False):
-    """
-    :param a: bw最小值
-    :param c: bw最大值
-    :param A: tau最小值
-    :param C: tau最大值
-    :param tau_decimal: tau有效数字位数
-    """
+    """:param a: bw minimum value
+    :param c: bw maximum value
+    :param A: tau minimum value
+    :param C: tau maximum value
+    :param tau_decimal: tau number of significant digits"""
     b = a + delta * np.abs(c - a)
     d = c - delta * np.abs(c - a)
     B = A + delta * np.abs(C - A)

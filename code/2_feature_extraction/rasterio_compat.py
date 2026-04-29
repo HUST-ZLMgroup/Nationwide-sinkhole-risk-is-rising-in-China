@@ -38,16 +38,16 @@ def _preload_libnetcdf19():
     for candidate in _iter_libnetcdf19_candidates():
         try:
             ctypes.CDLL(str(candidate), mode=mode)
-            print(f"[rasterio_compat] 使用兼容库: {candidate}")
+            print(f"[rasterio_compat] Use the compatibility library:{candidate}")
             return True
         except OSError as exc:
             errors.append(f"{candidate}: {exc}")
 
     joined = "\n".join(errors)
     raise ImportError(
-        "未能加载兼容的 libnetcdf.so.19。\n"
-        "已尝试以下候选路径：\n"
-        f"{joined or '未找到任何候选文件'}"
+        "libnetcdf.so.19.\\n"
+        ":\\n"
+        f"{joined or 'No candidate files found'}"
     )
 
 

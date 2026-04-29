@@ -3,12 +3,12 @@ from pathlib import Path
 import nbformat
 from nbconvert.preprocessors import ExecutePreprocessor
 
-# ====== 需要你按实际情况改一下路径 ======
-# NOTEBOOK_PATH = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/compute_climate_change_increment.ipynb")   # 跑结果的代码
-NOTEBOOK_PATH = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/plot_climate_change_increment.ipynb")   # 出图的代码
-OUTPUT_DIR = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/batch_outputs")                          # 输出目录（会自动创建）
-WORK_DIR = NOTEBOOK_PATH.parent                             # notebook 执行时的工作目录
-KERNEL_NAME = "python3"                                     # 一般默认 python3
+# ====== You need to change the path according to the actual situation ======
+# NOTEBOOK_PATH = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/compute_climate_change_increment.ipynb") # Run the result code
+NOTEBOOK_PATH = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/plot_climate_change_increment.ipynb")   # Processing step.
+OUTPUT_DIR = Path("/path/to/sinkhole-risk-china/code/5_1_climate_change/batch_outputs")                          # Output directory (will be created automatically)
+WORK_DIR = NOTEBOOK_PATH.parent                             # Working directory when notebook is executed
+KERNEL_NAME = "python3"                                     # Generally defaults to python3
 
 ssps = ["ssp2"]
 ssp_times = ["2040", "2060", "2080", "2100"]
@@ -16,11 +16,9 @@ ssp_times = ["2040", "2060", "2080", "2100"]
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 def set_params_cell(nb, ssp_value: str, ssp_time_value: str) -> None:
-    """
-    在 notebook 中设置/替换参数单元：
-    - 若找到同时包含 'ssp =' 与 'ssp_time =' 的代码单元，则替换其内容
-    - 否则在最前面插入一个新的代码单元
-    """
+    """Set/replace parameter cells in notebook:
+    - If a code unit containing both 'ssp =' and 'ssp_time =' is found, replace its content
+    - Otherwise insert a new code unit at the front"""
     param_src = f'ssp = "{ssp_value}"\nssp_time = "{ssp_time_value}"\n'
     target_idx = None
 
@@ -29,7 +27,7 @@ def set_params_cell(nb, ssp_value: str, ssp_time_value: str) -> None:
             continue
         src = cell.source or ""
         if ("ssp" in src) and ("ssp_time" in src) and ("=" in src):
-            # 更严格一点：同时包含 ssp = 与 ssp_time =
+            # More strictly: include both ssp = and ssp_time =
             if ("ssp" in src and "ssp_time" in src and "ssp =" in src and "ssp_time" in src):
                 target_idx = i
                 break
@@ -44,9 +42,9 @@ def run_one(ssp_value: str, ssp_time_value: str):
     set_params_cell(nb, ssp_value, ssp_time_value)
 
     ep = ExecutePreprocessor(
-        timeout=-1,              # 不设超时（按需也可改成秒数）
+        timeout=-1,              # ()
         kernel_name=KERNEL_NAME,
-        allow_errors=False       # 遇到报错就中断该组合（更利于定位问题）
+        allow_errors=False       # If an error is reported, interrupt the combination (more conducive to locating the problem)
     )
 
     print(f"[RUN] ssp={ssp_value}, ssp_time={ssp_time_value}")

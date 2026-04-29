@@ -3,7 +3,7 @@ import pandas as pd
 import geopandas as gpd
 
 # =========================
-# 基础变量与路径（按你给的）
+# Basic variables and paths (as given by you)
 # =========================
 home_dir = os.path.expanduser("/path/to/home/")
 base_path = os.path.join(home_dir, "PROJECT_DIR", "Papers", "4_NC")
@@ -28,34 +28,34 @@ df_division_path = os.path.join(
 )
 
 # =========================
-# 1) 读取 CSV
+# 1) CSV
 # =========================
 df = pd.read_csv(df_path)
 
 if "ADCODE99" not in df.columns:
     raise KeyError(
-        f"CSV 缺少 ADCODE99 列。现有列：{list(df.columns)}"
+        f"CSV is missing column ADCODE99. Existing columns:{list(df.columns)}"
     )
 
-# 统一为可空整型，避免 '110000' vs 110000.0 匹配失败
+# , '110000' vs 110000.0
 df["ADCODE99"] = pd.to_numeric(df["ADCODE99"], errors="coerce").astype("Int64")
 
 # =========================
-# 2) 读取 shp，提取映射表
+# 2) Read shp and extract the mapping table
 # =========================
 gdf_poly = gpd.read_file(province_no_TW_AM_HK_geographical_division_shp)
 
 need_cols = {"ADCODE99", "NAME_EN_JX", "DIV_CN", "DIV_EN"}
 missing = need_cols - set(gdf_poly.columns)
 if missing:
-    raise KeyError(f"SHP 缺少字段：{missing}，现有字段：{list(gdf_poly.columns)}")
+    raise KeyError(f"SHP missing field:{missing}, existing fields:{list(gdf_poly.columns)}")
 
 lookup = gdf_poly[["ADCODE99", "NAME_EN_JX", "DIV_CN", "DIV_EN"]].copy()
 lookup["ADCODE99"] = pd.to_numeric(lookup["ADCODE99"], errors="coerce").astype("Int64")
 lookup = lookup.drop_duplicates(subset=["ADCODE99"], keep="first")
 
 # =========================
-# 3) 合并并仅保留匹配到的行
+# 3) Merge and keep only matching lines
 # =========================
 out = df.merge(lookup, on="ADCODE99", how="left")
 
@@ -63,20 +63,19 @@ n_total = len(out)
 n_matched = out["DIV_EN"].notna().sum()
 n_dropped = n_total - n_matched
 
-# 只保留匹配到分区的行（DIV_EN 不为空即可）
+# (DIV_EN )
 out_matched = out[out["DIV_EN"].notna()].copy()
 
-print(f"总行数：{n_total}")
-print(f"匹配到的行数：{n_matched}")
-print(f"丢弃未匹配行数：{n_dropped}")
+print(f"Total number of lines:{n_total}")
+print(f"Number of matched lines:{n_matched}")
+print(f"Discard the number of unmatched rows:{n_dropped}")
 
-# （可选）如果你还想看看丢弃的是哪些 ADCODE99，取消注释：
+# () ADCODE99,:
 # bad_codes = sorted(out.loc[out["DIV_EN"].isna(), "ADCODE99"].dropna().unique().tolist())
-# print("被丢弃的 ADCODE99（去重后）：", bad_codes)
-
+# print("Discarded ADCODE99 (after deduplication):", bad_codes)
 # =========================
-# 4) 保存
+# 4) Save
 # =========================
 os.makedirs(os.path.dirname(df_division_path), exist_ok=True)
 out_matched.to_csv(df_division_path, index=False, encoding="utf-8-sig")
-print("✅ 已保存（仅匹配行）：", df_division_path)
+print("✅ Saved (matching lines only):", df_division_path)

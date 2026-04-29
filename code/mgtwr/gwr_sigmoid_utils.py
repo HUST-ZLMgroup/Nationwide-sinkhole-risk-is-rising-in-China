@@ -22,9 +22,7 @@ DEFAULT_ROBUST_CLIP_Z = 6.0
 
 
 def sigmoid(values: np.ndarray, clip: float = DEFAULT_SIGMOID_CLIP) -> np.ndarray:
-    """
-    标准 sigmoid。
-    """
+    """Standard sigmoid."""
     values = np.asarray(values, dtype=float)
     values = np.clip(values, -float(clip), float(clip))
     return 1.0 / (1.0 + np.exp(-values))
@@ -34,13 +32,11 @@ def fit_robust_sigmoid_iqr_transform(
     scores: np.ndarray,
     clip_z: float = DEFAULT_ROBUST_CLIP_Z,
 ) -> Dict[str, float]:
-    """
-    用中位数 + IQR 拟合稳健 sigmoid 参数。
-    """
+    """Fit robust sigmoid parameters with median + IQR."""
     scores = np.asarray(scores, dtype=float).reshape(-1)
     finite_scores = scores[np.isfinite(scores)]
     if finite_scores.size == 0:
-        raise ValueError("没有可用于拟合 robust sigmoid 的有限 GWR 输出值。")
+        raise ValueError("There are no finite GWR output values ​​available for fitting robust sigmoid.")
 
     center = float(np.nanmedian(finite_scores))
     q25, q75 = np.nanpercentile(finite_scores, [25, 75])
@@ -66,14 +62,12 @@ def robust_sigmoid_transform(
     scale: float,
     clip_z: float = DEFAULT_ROBUST_CLIP_Z,
 ) -> np.ndarray:
-    """
-    按给定 center/scale/clip_z，把原始分数映射到 0-1。
-    """
+    """Map raw fraction to 0-1 at given center/scale/clip_z."""
     scores = np.asarray(scores, dtype=float).reshape(-1)
     probabilities = np.full(scores.shape, np.nan, dtype=float)
     valid = np.isfinite(scores)
     if not valid.any():
-        raise ValueError("scores 中没有可用的有限值。")
+        raise ValueError("No finite value available in scores.")
 
     scale = float(scale)
     if (not np.isfinite(scale)) or scale <= EPS:
@@ -91,16 +85,14 @@ def convert_gwr_scores_to_susceptibility_probabilities(
     clip_z: float = DEFAULT_ROBUST_CLIP_Z,
     return_metadata: bool = True,
 ) -> Tuple[np.ndarray, Dict[str, float]] | np.ndarray:
-    """
-    把 GWR 原始回归输出映射为 0-1 概率。
-    """
+    """Map GWR raw regression output to 0-1 probabilities."""
     scores = np.asarray(gwr_results, dtype=float).reshape(-1)
     if transform_metadata is None:
         transform_metadata = fit_robust_sigmoid_iqr_transform(scores, clip_z=clip_z)
 
     method = transform_metadata.get("method")
     if method != "robust_sigmoid_iqr":
-        raise ValueError(f"不支持的 transform method: {method}")
+        raise ValueError(f"Unsupported transform method:{method}")
 
     metadata = {
         "method": "robust_sigmoid_iqr",
@@ -126,9 +118,7 @@ def gwr_scores_to_probabilities(
     clip_z: float = DEFAULT_ROBUST_CLIP_Z,
     return_metadata: bool = True,
 ) -> Tuple[np.ndarray, Dict[str, float]] | np.ndarray:
-    """
-    `convert_gwr_scores_to_susceptibility_probabilities` 的简短别名。
-    """
+    """`convert_gwr_scores_to_susceptibility_probabilities` ."""
     return convert_gwr_scores_to_susceptibility_probabilities(
         gwr_results,
         transform_metadata=transform_metadata,
@@ -140,7 +130,7 @@ def gwr_scores_to_probabilities(
 def to_binary_labels(labels: np.ndarray, positive_cutoff: float = 0.55) -> np.ndarray:
     labels = np.asarray(labels, dtype=float).reshape(-1)
     if not np.isfinite(labels).all():
-        raise ValueError("标签中包含非有限值，无法进行二分类评估。")
+        raise ValueError("The label contains non-finite values and cannot be evaluated for binary classification.")
     return (labels > float(positive_cutoff)).astype(int)
 
 
@@ -228,7 +218,7 @@ def fit_gwr_probability_classifier(
     valid_mask = np.isfinite(probabilities)
 
     if valid_mask.sum() < 10:
-        raise ValueError("有效的 GWR 训练概率过少，无法进行阈值选择。")
+        raise ValueError("There are too few effective GWR training probabilities for threshold selection.")
 
     y_eval = y_binary[valid_mask]
     prob_eval = probabilities[valid_mask]

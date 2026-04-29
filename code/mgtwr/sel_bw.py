@@ -12,7 +12,7 @@ class Sel_BW(object):
             raise ValueError('Coords, X and y must have the same length.')
         if coords.shape[1] < 2 or coords.shape[1] > 3 or y.shape[1] > 1:
             raise ValueError('Errors in the shape of the data.')
-        self.n = y.shape[0]  # 点的个数
+        self.n = y.shape[0]  # Number of points
         if coords.shape[1] == 2:
             self.coords = np.hstack((coords, np.zeros((self.n, 1))))
         else:
@@ -22,7 +22,7 @@ class Sel_BW(object):
             self.X = np.hstack((np.ones((self.n, 1)), X))
         else:
             self.X = X
-        self.k = self.X.shape[1]  # 变量个数
+        self.k = self.X.shape[1]  # Number of variables
         self.mode = mode.lower()
         self.kernel = kernel.lower()
         self.fixed = fixed
@@ -33,16 +33,15 @@ class Sel_BW(object):
                bw_interval=1., tau_interval=0.1, tol=1.0e-6, max_iter=200, verbose=False,
                multi_init=None, tol_multi=1.0e-5, rss_score=False, max_iter_multi=200, multi_bw_min=None,
                multi_bw_max=None, max_same_times=5, pool=None):
-        """
-        :param search_method: golden_section or equal_interval
+        """:param search_method: golden_section or equal_interval
         :param criterion: AICc AIC BIC CV
         :param bw_min:
         :param bw_max:
         :param tau_min:
         :param tau_max:
         :param tau_decimal:
-        :param bw_interval: 当search_method为equal_interval时使用
-        :param tau_interval: 当search_method为equal_interval时使用
+        :param bw_interval: used when search_method is equal_interval
+        :param tau_interval: used when search_method is equal_interval
         :param tol:
         :param max_iter:
         :param verbose:
@@ -54,8 +53,7 @@ class Sel_BW(object):
         :param multi_bw_max:
         :param max_same_times:
         :param pool:
-        :return:
-        """
+        :return:"""
         self.search_method = search_method
         self.criterion = criterion
         self.bw_min = bw_min
@@ -203,7 +201,7 @@ class Sel_BW(object):
 
 class _One_Var_Sel(object):
     def __init__(self, coords, y, X, kernel='bisquare', fixed=False, spherical=False):
-        self.n = y.shape[0]  # 点的个数
+        self.n = y.shape[0]  # Number of points
         self.coords = coords
         self.y = y
         self.X = X

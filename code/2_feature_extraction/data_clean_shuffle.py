@@ -4,11 +4,9 @@ import pandas as pd
 
 
 def _find_long_nan_runs(series, max_allowed=10):
-    """
-    查找 series 中连续 NaN 段，返回列表：
-    [(start_pos, end_pos, length), ...]，仅保留 length > max_allowed 的段。
-    这里的 start_pos/end_pos 是基于当前 Series 的位置索引（0, 1, 2, ...）。
-    """
+    """Find consecutive NaN segments in series and return a list:
+    [(start_pos, end_pos, length), ...], only segments with length > max_allowed are retained.
+    The start_pos/end_pos here are based on the position index of the current Series (0, 1, 2, ...)."""
     is_na = series.isna().to_numpy()
     n = len(is_na)
     runs = []
@@ -30,14 +28,12 @@ def _find_long_nan_runs(series, max_allowed=10):
 
 
 def _normalize_integer_column(series, col_name):
-    """
-    将指定列统一规范为整数编码。
+    """Unify the specified columns into integer encoding.
 
-    处理逻辑：
-    1. 先转为数值；
-    2. 对非整数值进行四舍五入；
-    3. 保留缺失值，最终转为 pandas 可空整数类型 Int64。
-    """
+    Processing logic:
+    1. Convert to numerical value first;
+    2. Round non-integer values;
+    3. Keep missing values and finally convert them to pandas nullable integer type Int64."""
     s_num = pd.to_numeric(series, errors="coerce")
 
     mask_valid = s_num.notna()
@@ -46,7 +42,7 @@ def _normalize_integer_column(series, col_name):
 
     if n_non_integer > 0:
         print(
-            f"[DataClean] 检测到 {col_name} 中有 {n_non_integer} 个非整数值，已执行四舍五入取整。"
+            f"[DataClean]{col_name}There are{n_non_integer},."
         )
 
     s_rounded = s_num.round()
@@ -60,53 +56,51 @@ def data_clean_and_shuffle(
     ssp=None,
     random_state=42,
 ):
-    """
-    需求12：数据清洗 + 打乱
+    """Requirement 12: Data cleaning + disruption
 
-    步骤：
-    1. 针对每一个特征列，删除该特征中超出 mean ± 10*std 范围的行；
-    2. 针对每一个特征列，对空值所在的行进行插值填充；
-       若某列存在连续 NaN 长度 > 10，则打印出具体信息（不强制报错中断）；
-    3. 检查每一个特征列是否存在占比 > 10% 的数值，对这些值随机加减极小数；
-    4. 数据整体打乱（按行），重置 index；
-    5. 保存到 output_folder_path，文件名 = 需求11 的文件名 + "_cleaned".
+    Steps:
+    1. For each feature column, delete the rows in the feature that exceed the range of mean ± 10*std;
+    2. For each feature column, interpolate the rows where the null values are located;
+       If there is a continuous NaN length > 10 in a column, specific information will be printed out (no error interrupt will be forced);
+    3. Check whether there is a value in each feature column that accounts for > 10%, and randomly add or subtract very small numbers to these values;
+    4. The data is scrambled as a whole (by row) and the index is reset;
+    5. Save to output_folder_path, file name = file name of requirement 11 + "_cleaned".
 
-    参数
+    parameters
     ----
     sinkhole_position : pandas.DataFrame
-        需求11 汇总完的总 DataFrame（包含原始 6 列 + 所有特征列）。
+        Requirement 11 The total DataFrame that has been summarized (contains the original 6 columns + all feature columns).
     df_path : str
-        原始样本 CSV 路径（主代码中读入的 df_path），用于构造输出文件名。
+        The original sample CSV path (df_path read in in the main code), used to construct the output filename.
     output_folder_path : str
-        路径为主程序根据 csv_to_subfolder 映射得到的目录。
-        即：D:\\path\\to\\sinkhole-risk-china\\data\\Extracted_HAVE_future\\<csv_to_subfolder[csv_name]>
+        The path is the directory mapped by the main program according to csv_to_subfolder.
+        That is: D:\\path\\to\\sinkhole-risk-china\\data\\Extracted_HAVE_future\\<csv_to_subfolder[csv_name]>
     ssp : str or None
-        当前 SSP 情景（如 'ssp1', 'ssp2', 'ssp3', 'ssp5'）。需要和需求11保持一致。
+        Current SSP context (e.g. 'ssp1', 'ssp2', 'ssp3', 'ssp5'). Need to be consistent with requirement 11.
     random_state : int or None
-        用于控制随机打乱和扰动的随机种子，便于复现。
+        Random seeds used to control random scrambling and perturbation for easy reproduction.
 
-    返回
+    Return
     ----
     pandas.DataFrame
-        清洗 + 打乱后的 DataFrame。
-    """
+        Cleaned + shuffled DataFrame."""
 
-    print("\n[DataClean] 开始进行数据清洗与打乱 ...")
+    print("\\n[DataClean] ...")
 
-    # 为了可重复，设置随机种子
+    # For repeatability, set a random seed
     if random_state is not None:
         np.random.seed(random_state)
 
-    # 0. 复制一份，避免修改原来的 sinkhole_position 引用
+    # 0. Make a copy to avoid modifying the original sinkhole_position reference
     df_clean = sinkhole_position.copy()
 
-    # 0.1 规范需要保持整数的列，避免因浮点精度残留变成非整数
+    # 0.1 The specification needs to maintain integer columns to avoid becoming non-integer due to floating point precision residues
     if "ADCODE99" in df_clean.columns:
         df_clean["ADCODE99"] = _normalize_integer_column(df_clean["ADCODE99"], "ADCODE99")
     if "Disaster" in df_clean.columns:
         df_clean["Disaster"] = _normalize_integer_column(df_clean["Disaster"], "Disaster")
 
-    # 1. 定义“原始列”和“特征列”
+    # 1. Define "original column" and "feature column"
     # base_cols = ["No", "Disaster", "Longitude", "Latitude", "ADCODE99", "Province"]
     base_cols = ["No", "Longitude", "Latitude"]
     if "ADCODE99" in df_clean.columns:
@@ -116,18 +110,18 @@ def data_clean_and_shuffle(
 
     for c in base_cols:
         if c not in df_clean.columns:
-            raise ValueError(f"[DataClean] DataFrame 缺少基础列: {c}")
+            raise ValueError(f"[DataClean] DataFrame missing base column:{c}")
 
-    # 只在数值型列里找特征列
+    # Processing step.
     numeric_cols = df_clean.select_dtypes(include=[np.number]).columns.tolist()
     feature_cols = [c for c in numeric_cols if c not in base_cols]
 
-    print(f"[DataClean] 检测到数值型特征列数量: {len(feature_cols)}")
-    print("[DataClean] 特征列列表:")
+    print(f"[DataClean] Number of numerical feature columns detected:{len(feature_cols)}")
+    print("[DataClean] Feature column list:")
     print("  ", feature_cols)
 
-    # 1) 针对每一个特征列，删除超出 mean ± 10*std 的行
-    print("\n[DataClean] Step 1: 删除极端离群值 (mean ± 10*std)...")
+    # 1) For each feature column, delete rows exceeding mean ± 10*std
+    print("\\n[DataClean] Step 1: Remove extreme outliers (mean ± 10*std)...")
     for col in feature_cols:
         series = df_clean[col].astype("float64")
 
@@ -135,8 +129,8 @@ def data_clean_and_shuffle(
         sigma = series.std(skipna=True)
 
         if not np.isfinite(mu) or not np.isfinite(sigma) or sigma == 0:
-            # 该列基本常数或全 NaN，跳过离群值删除
-            print(f"[DataClean] 列 {col}: std 无效或为 0，跳过离群值检测。")
+            # The column is basically constant or all NaN, skip outlier deletion
+            print(f"[DataClean] column{col}: std is invalid or 0, skips outlier detection.")
             continue
 
         lower = mu - 10.0 * sigma
@@ -147,64 +141,64 @@ def data_clean_and_shuffle(
 
         if n_outliers > 0:
             print(
-                f"[DataClean] 列 {col}: 删除 {n_outliers} 条超出 [{lower:.4g}, {upper:.4g}] 的离群样本。"
+                f"[DataClean] column{col}:{n_outliers}items exceeded [{lower:.4g}, {upper:.4g}] outlier sample."
             )
             df_clean = df_clean.loc[~mask_outlier].copy()
         else:
-            print(f"[DataClean] 列 {col}: 无离群值。")
+            print(f"[DataClean] column{col}: No outliers.")
 
-    # 删除完行之后，重置 index
+    # After deleting the row, reset the index
     df_clean.reset_index(drop=True, inplace=True)
-    print(f"[DataClean] 离群值删除后，样本数: {len(df_clean)}")
+    print(f"[DataClean] After outliers are deleted, the number of samples:{len(df_clean)}")
 
-    # 2) 对空值进行插值，并检查连续 NaN > 10 的情况
-    print("\n[DataClean] Step 2: 插值填补缺失值 + 检查长 NaN 段 ...")
+    # 2) Interpolate null values and check for consecutive NaN > 10
+    print("\\n[DataClean] Step 2: Interpolate to fill missing values + check for long NaN segments...")
     for col in feature_cols:
         s = df_clean[col].astype("float64")
         if not s.isna().any():
-            # 没有缺失，跳过
+            # Not missing, skip
             continue
 
-        # 2.1 检查是否有连续 NaN 超过 10 个
+        # 2.1 NaN 10
         long_runs = _find_long_nan_runs(s, max_allowed=10)
         if long_runs:
-            print(f"[DataClean][警告] 列 {col} 存在连续超过 10 个的 NaN 段：")
+            print(f"[DataClean][]{col}There are more than 10 consecutive NaN segments:")
             for start, end, length in long_runs:
                 print(
-                    f"    - 位置区间: [{start}, {end}]，长度: {length} （基于当前 DataFrame 行序）"
+                    f"- Location interval: [{start}, {end}],:{length}(based on current DataFrame row order)"
                 )
 
-        # 2.2 做线性插值，双向填充（两端也填）
+        # 2.2 ,()
         s_interp = s.interpolate(method="linear", limit_direction="both")
         df_clean[col] = s_interp
 
-        # 再检查是否还有 NaN（理论上连续长段两端都为 NaN 时仍会有残留）
+        # NaN( NaN )
         remaining_nan = df_clean[col].isna().sum()
         if remaining_nan > 0:
             print(
-                f"[DataClean][提示] 列 {col} 插值后仍有 {remaining_nan} 个 NaN，"
-                f"建议后续手动检查这些位置。"
+                f"[DataClean][Prompt] Column{col}After interpolation, there is still{remaining_nan}NaN,"
+                f"."
             )
 
-    # 3) 检查每个特征列是否存在占比 > 10% 的数值，若有则添加微小随机扰动
-    print("\n[DataClean] Step 3: 检查并扰动占比 > 10% 的重复值 ...")
+    # 3) Check whether each feature column has a value > 10%, and if so, add a small random perturbation
+    print("\\n[DataClean] Step 3: Check and perturb duplicate values > 10%...")
     for col in feature_cols:
         s = df_clean[col].astype("float64")
         non_na = s.dropna()
 
         if len(non_na) == 0:
-            print(f"[DataClean] 列 {col}: 全为 NaN，跳过。")
+            print(f"[DataClean] column{col}: All are NaN, skip.")
             continue
 
         value_ratio = non_na.value_counts(normalize=True)
-        # 选出占比 > 10% 的所有数值
+        # Select all values with proportion > 10%
         heavy_vals = value_ratio[value_ratio > 0.10]
 
         if heavy_vals.empty:
-            print(f"[DataClean] 列 {col}: 不存在占比 >10% 的单一数值。")
+            print(f"[DataClean] column{col}: There is no single value accounting for >10%.")
             continue
 
-        # 计算一个极小的 eps，相对于该列的尺度
+        # Calculate a miniscule eps, relative to the scale of the column
         std_col = non_na.std(skipna=True)
         if not np.isfinite(std_col) or std_col == 0:
             base_scale = 1.0
@@ -216,7 +210,7 @@ def data_clean_and_shuffle(
             eps = 1e-6
 
         print(
-            f"[DataClean] 列 {col}: 存在 {len(heavy_vals)} 个值占比 >10%，将为这些值添加随机扰动 (±{eps:.3e})。"
+            f"[DataClean] column{col}: exists{len(heavy_vals)}values account for >10%, random perturbations (±{eps:.3e})."
         )
 
         for val, ratio in heavy_vals.items():
@@ -229,36 +223,36 @@ def data_clean_and_shuffle(
             s.loc[mask_val] = s.loc[mask_val].to_numpy() + noise
 
             print(
-                f"    - 值 {val} 占比 {ratio*100:.2f}% ，扰动样本数: {n_val}"
+                f"- value{val}Proportion{ratio*100:.2f}%, number of perturbation samples:{n_val}"
             )
 
         df_clean[col] = s
 
-    # 4) 数据打乱（行顺序随机）
-    print("\n[DataClean] Step 4: 打乱样本顺序 ...")
+    # 4) ()
+    print("\\n[DataClean] Step 4: Shuffle the order of samples ...")
     df_clean = df_clean.sample(frac=1.0, random_state=random_state).reset_index(
         drop=True
     )
-    print(f"[DataClean] 打乱后样本数: {len(df_clean)}")
+    print(f"[DataClean] Number of samples after scrambling:{len(df_clean)}")
 
-    # 4.1 保存前再次兜底规范整数列，确保导出结果仍为整数编码
+    # 4.1 ,
     if "ADCODE99" in df_clean.columns:
         df_clean["ADCODE99"] = _normalize_integer_column(df_clean["ADCODE99"], "ADCODE99")
     if "Disaster" in df_clean.columns:
         df_clean["Disaster"] = _normalize_integer_column(df_clean["Disaster"], "Disaster")
 
-    # 5) 生成输出文件名（需求11文件名 + _cleaned）
-    csv_name = os.path.basename(df_path)         # 如 Positive_Negative_balanced_25366.csv
+    # 5) Generate output file name (requires 11 file name + _cleaned)
+    csv_name = os.path.basename(df_path)         # Positive_Negative_balanced_25366.csv
     csv_stem, _ = os.path.splitext(csv_name)     # Positive_Negative_balanced_25366
 
-    # 需求11 的文件名逻辑（与 aggregate_features 保持一致）：
-    #   AllFeatures_<csv_stem>.csv 或 AllFeatures_<csv_stem>_<ssp>.csv
+    # File name logic for requirement 11 (consistent with aggregate_features):
+    # AllFeatures_<csv_stem>.csv or AllFeatures_<csv_stem>_<ssp>.csv
     if ssp is not None and str(ssp).strip() != "":
         base_filename = f"AllFeatures_{csv_stem}_{ssp}.csv"
     else:
         base_filename = f"AllFeatures_{csv_stem}.csv"
 
-    # 需求12 输出：在此基础上加上 _cleaned
+    # Requirement 12 Output: Add _cleaned on this basis
     clean_filename = base_filename.replace(".csv", "_cleaned.csv")
 
     os.makedirs(output_folder_path, exist_ok=True)
@@ -266,10 +260,10 @@ def data_clean_and_shuffle(
 
     df_clean.to_csv(output_path, index=False, encoding="utf-8-sig")
 
-    print("\n[DataClean] 清洗 + 打乱 完成！")
-    print("[DataClean] 输出文件路径:")
+    print("\\n[DataClean] Clean + scramble completed!")
+    print("[DataClean] :")
     print("  ", output_path)
-    print(f"[DataClean] 最终样本数: {len(df_clean)}")
-    print(f"[DataClean] 最终特征数量(含原始列): {len(df_clean.columns)}")
+    print(f"[DataClean] :{len(df_clean)}")
+    print(f"[DataClean] Final number of features (including original columns):{len(df_clean.columns)}")
 
     return df_clean

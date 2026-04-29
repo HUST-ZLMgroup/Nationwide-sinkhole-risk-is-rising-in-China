@@ -38,7 +38,7 @@ class GTWR(object):
             raise ValueError('coords, X and y must have the same length.')
         if coords.shape[1] < 2 or coords.shape[1] > 3 or y.shape[1] > 1:
             raise ValueError('Errors in the shape of the data.')
-        self.n = y.shape[0]  # 点的个数
+        self.n = y.shape[0]  # Number of points
         self.bw = bw
         self.tau = tau if temporally else 0.
         if coords.shape[1] == 2:
@@ -52,7 +52,7 @@ class GTWR(object):
             self.X = np.hstack((np.ones((self.n, 1)), X))
         else:
             self.X = X
-        self.k = self.X.shape[1]  # 变量个数
+        self.k = self.X.shape[1]  # Number of variables
         self.kernel = kernel.lower()
         self.fixed = fixed
         self.spherical = spherical
@@ -179,7 +179,7 @@ class MGTWR(object):
         self.selector = selector
         self.bws_taus = selector.search_result_multi[0]  # final set of bandwidth and tau
         self.bws_taus_history = selector.search_result_multi[1]  # bws and taus history in backfitting
-        self.n = y.shape[0]  # 点的个数
+        self.n = y.shape[0]  # Number of points
         if coords.shape[1] == 2:
             self.coords = np.hstack((coords[:, :2], np.zeros((self.n, 1))))
         else:
@@ -190,7 +190,7 @@ class MGTWR(object):
             self.X = np.hstack((np.ones((self.n, 1)), X))
         else:
             self.X = X
-        self.k = self.X.shape[1]  # 变量个数
+        self.k = self.X.shape[1]  # Number of variables
         self.bw_init = selector.multi_init[0]
         self.tau_init = selector.multi_init[1]
         self.kernel = kernel.lower()
@@ -293,7 +293,7 @@ class MGTWR(object):
         P = np.block(P)
         Q = np.block(Q)
         R = np.linalg.solve(P, Q)
-        self.f = R.dot(self.y)  # 用于预测------------------------------------------------------------------------
+        self.f = R.dot(self.y)  # For prediction--------------------------------------------------------------------------------
 
         params = self.f / self.X.T.reshape(-1, 1)
         params = params.reshape(-1, self.n).T
@@ -305,7 +305,7 @@ class MGTWR(object):
         CCT = np.zeros((self.n, self.k))
         for j in range(self.k):
             CCT[:, j] = ((R[:, :, j] / self.X[:, j].reshape(-1, 1)) ** 2).sum(axis=1)
-        self.err = self.y - predy  # 用于预测---------------------------------------------------------------------
+        self.err = self.y - predy  # For prediction--------------------------------------------------------------------------------
         return MGTWRResults(self, params, predy, CCT, ENP_j)
 
     def predict(self, coords, X, bws_taus=None):

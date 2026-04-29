@@ -160,7 +160,7 @@ The optimal validation threshold was $t^* = 0.6810$. Under this protocol, the va
 
 ## 5. Recommended wording in Chinese for internal documentation
 
-本研究没有把 GWR 的原始回归输出直接解释为概率，而是先将其视为连续风险分数，再通过稳健缩放后的 Logistic 校准模型将其映射为事件发生概率。该处理本质上属于后验概率校准，而不是把 GWR 回归模型本身改写为概率模型。其理论基础在于：如果原始分数与事件风险之间存在单调关系，则单变量 Logistic 映射可以在保留排序信息的同时，将分数转换到 `[0,1]` 概率空间；同时采用中位数和四分位距进行稳健缩放，可以降低极端值对参数估计的影响。最终的二分类阈值通过验证集上的 Youden 指数确定，而不是直接对原始 GWR 分数或裁剪后的伪概率设置经验阈值。
+This study does not interpret the raw regression output of GWR directly as a probability, but first treats it as a continuous risk score, which is then mapped into an event probability through a robustly scaled logistic calibration model. This process essentially belongs to posterior probability calibration, rather than rewriting the GWR regression model itself into a probability model. Its theoretical basis is that if there is a monotonic relationship between the original score and event risk, univariate logistic mapping can transform the score into the `[0,1]` probability space while retaining the ranking information; while using the median and interquartile range for robust scaling, it can reduce the impact of extreme values ​​on parameter estimates. The final binary classification threshold is determined by Youden's index on the validation set, rather than directly setting an empirical threshold on the raw GWR score or the clipped pseudo-probability.
 
 ## 6. Important caution for manuscript writing
 
